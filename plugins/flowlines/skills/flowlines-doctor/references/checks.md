@@ -11,7 +11,7 @@ curl -sS -o /dev/null -w '%{http_code}\n' -X POST https://api.flowlines.ai/v1/lo
 
 A `401` proves DNS, TLS, and routing work from this host and the endpoint is up. A connection error, a timeout, or a `5xx` is the problem. A `404` means the base URL is wrong.
 
-To test with the key, put the header in a file with mode `0600` and let curl read it:
+To test with the key, put the header in a file with mode `0600` and let curl read it. A namespace key is created in the Flowlines app under Settings, API keys (`https://app.flowlines.ai/settings`), and is shown once:
 
 ```sh
 printf 'x-flowlines-api-key: %s\n' "$(cat /secure/path/flowlines-api-key)" > /secure/path/flowlines-header
