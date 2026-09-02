@@ -217,6 +217,57 @@ assert [h["command"] for g in hooks["UserPromptSubmit"] for h in g["hooks"]] == 
 assert "PostToolUse" not in hooks
 PY
 
+# --- state from the previous installer version is upgraded on repair ------------------------
+
+cp "${FLOWLINES_TEST_ROOT}/claude.original" "${FLOWLINES_AGENT_HOME}/.claude/settings.json"
+cp "${FLOWLINES_TEST_ROOT}/codex.original" "${FLOWLINES_AGENT_HOME}/.codex/config.toml"
+cp "${FLOWLINES_TEST_ROOT}/hooks.original" "${FLOWLINES_AGENT_HOME}/.codex/hooks.json"
+"${FLOWLINES_SCRIPT_DIR}/install.sh" --target both --non-interactive >/dev/null
+python3 - <<'PY'
+# The previous version recorded only paths, backups, and hashes.
+import json
+import os
+from pathlib import Path
+
+state_path = Path(os.environ["FLOWLINES_STATE"]) / "state.json"
+state = json.loads(state_path.read_text())
+for item in state["files"].values():
+    for key in ("managed_original", "removed_env", "removed_toml", "events_original", "env_absent_originally"):
+        item.pop(key, None)
+state["version"] = 1
+state_path.write_text(json.dumps(state, indent=2) + "\n")
+PY
+"${FLOWLINES_SCRIPT_DIR}/install.sh" --target both --non-interactive >/dev/null
+python3 - <<'PY'
+import json
+import os
+from pathlib import Path
+
+home = Path(os.environ["FLOWLINES_AGENT_HOME"])
+claude_path = home / ".claude/settings.json"
+claude = json.loads(claude_path.read_text())
+claude["env"]["ADDED_LATER"] = "1"
+claude_path.write_text(json.dumps(claude) + "\n")
+codex_path = home / ".codex/config.toml"
+codex_path.write_text(codex_path.read_text() + '\n[custom]\nadded_later = "yes"\n')
+PY
+"${FLOWLINES_SCRIPT_DIR}/uninstall.sh" >/dev/null
+python3 - <<'PY'
+import json
+import os
+from pathlib import Path
+
+home = Path(os.environ["FLOWLINES_AGENT_HOME"])
+claude = json.loads((home / ".claude/settings.json").read_text())
+assert claude["env"] == {"KEEP_ME": "yes", "ADDED_LATER": "1"}, claude["env"]
+codex = (home / ".codex/config.toml").read_text()
+assert "flowlines" not in codex and "[otel]" not in codex and "[features]" not in codex, codex
+assert 'model = "gpt-test"' in codex and 'added_later = "yes"' in codex
+hooks = json.loads((home / ".codex/hooks.json").read_text())["hooks"]
+assert [h["command"] for g in hooks["Stop"] for h in g["hooks"]] == ["echo existing"]
+assert "UserPromptSubmit" not in hooks and "PostToolUse" not in hooks
+PY
+
 # --- existing exporters are never silently replaced -----------------------------------------
 
 python3 - <<'PY'
@@ -247,6 +298,27 @@ fi
 grep -q 'otel.exporter' "${FLOWLINES_TEST_ROOT}/stderr"
 cmp "${FLOWLINES_AGENT_HOME}/.claude/settings.json" "${FLOWLINES_TEST_ROOT}/claude.conflict"
 cmp "${FLOWLINES_AGENT_HOME}/.codex/config.toml" "${FLOWLINES_TEST_ROOT}/codex.conflict"
+[ ! -e "${FLOWLINES_STATE}" ]
+
+# Uninstall after a refusal must not touch the exporters it never replaced.
+"${FLOWLINES_SCRIPT_DIR}/uninstall.sh" >/dev/null
+cmp "${FLOWLINES_AGENT_HOME}/.claude/settings.json" "${FLOWLINES_TEST_ROOT}/claude.conflict"
+cmp "${FLOWLINES_AGENT_HOME}/.codex/config.toml" "${FLOWLINES_TEST_ROOT}/codex.conflict"
+
+# With --target both, a Codex refusal must leave Claude untouched as well.
+printf '%s\n' '{"theme":"dark"}' > "${FLOWLINES_AGENT_HOME}/.claude/settings.json"
+cp "${FLOWLINES_AGENT_HOME}/.claude/settings.json" "${FLOWLINES_TEST_ROOT}/claude.clean"
+if "${FLOWLINES_SCRIPT_DIR}/install.sh" --target both --non-interactive >/dev/null 2>"${FLOWLINES_TEST_ROOT}/stderr"; then
+  printf '%s\n' "install must refuse both targets when one conflicts" >&2
+  exit 1
+fi
+cmp "${FLOWLINES_AGENT_HOME}/.claude/settings.json" "${FLOWLINES_TEST_ROOT}/claude.clean"
+[ ! -e "${FLOWLINES_STATE}" ]
+if "${FLOWLINES_SCRIPT_DIR}/doctor.sh" >/dev/null 2>&1; then
+  printf '%s\n' "doctor must report a refused installation as not installed" >&2
+  exit 1
+fi
+cp "${FLOWLINES_TEST_ROOT}/claude.conflict" "${FLOWLINES_AGENT_HOME}/.claude/settings.json"
 
 "${FLOWLINES_SCRIPT_DIR}/install.sh" --target both --non-interactive --replace-existing-otel >/dev/null
 "${FLOWLINES_SCRIPT_DIR}/doctor.sh" >/dev/null

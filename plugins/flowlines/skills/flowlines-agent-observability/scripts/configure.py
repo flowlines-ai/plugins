@@ -98,6 +98,8 @@ def install_configuration(paths: dict[str, Path], target: str, relay_source: Pat
         fail("FLOWLINES_API_KEY must be a non-empty single-line value.")
     if not relay_source.is_file():
         fail("Codex relay source was not found.")
+    wanted = {"claude", "codex"} if target == "both" else {target}
+    preflight(paths, wanted, replace_existing)
 
     ensure_private_dir(paths["state_dir"])
     ensure_private_dir(paths["originals"])
@@ -120,6 +122,54 @@ def install_configuration(paths: dict[str, Path], target: str, relay_source: Pat
     state["api_base"] = api_base
     write_json(paths["state"], state, mode=0o600)
     return 0
+
+
+def preflight(paths: dict[str, Path], targets: set[str], replace_existing: bool) -> None:
+    """Read-only checks for every requested target, so a refusal never leaves one target
+    configured and the other untouched."""
+    problems: list[str] = []
+    if "claude" in targets:
+        config = read_json_object(paths["claude"])
+        env = config.get("env")
+        if env is not None and not isinstance(env, dict):
+            fail(f"{paths['claude']}: env must be a JSON object.")
+        conflicts = claude_conflicting_env(env or {})
+        if conflicts and not replace_existing:
+            problems.append(claude_conflict_message(paths["claude"], conflicts))
+    if "codex" in targets:
+        text = paths["codex"].read_text("utf-8") if paths["codex"].exists() else ""
+        conflicts = codex_conflicting_exporters(text)
+        if conflicts and not replace_existing:
+            problems.append(codex_conflict_message(paths["codex"], conflicts))
+        hook_map = read_json_object(paths["hooks"]).get("hooks")
+        if hook_map is not None and not isinstance(hook_map, dict):
+            fail(f"{paths['hooks']}: hooks must be a JSON object.")
+        for event_name in MANAGED_HOOK_EVENTS:
+            groups = (hook_map or {}).get(event_name, [])
+            if not isinstance(groups, list):
+                fail(f"{paths['hooks']}: hooks.{event_name} must be a JSON array.")
+    if problems:
+        fail("\n".join(problems))
+
+
+def claude_conflict_message(path: Path, conflicts: list[str]) -> str:
+    return (
+        f"{path} already routes OpenTelemetry signals elsewhere: "
+        + ", ".join(conflicts)
+        + ". Those entries would send full session content and the Flowlines key to that "
+        "collector. Remove them, or rerun with --replace-existing-otel to replace them "
+        "(the original file stays backed up)."
+    )
+
+
+def codex_conflict_message(path: Path, conflicts: list[str]) -> str:
+    return (
+        f"{path} already configures a Codex OTel exporter: "
+        + ", ".join(conflicts)
+        + ". Codex supports one exporter, so it would be replaced by Flowlines. Remove it, "
+        "or rerun with --replace-existing-otel to replace it (the original file stays "
+        "backed up)."
+    )
 
 
 def validate_api_base(value: str) -> str:
@@ -171,26 +221,19 @@ def configure_claude(
 ) -> None:
     config_path = paths["claude"]
     item = remember_original(paths, state, "claude", config_path)
+    ensure_original_fields("claude", item)
     refresh_backup_if_changed(paths, state, "claude", strip_managed_claude)
     config = read_json_object(config_path)
     env = config.get("env")
     if env is None:
         env = {}
         config["env"] = env
-        item.setdefault("env_absent_originally", True)
     if not isinstance(env, dict):
         fail(f"{config_path}: env must be a JSON object.")
-    item.setdefault("managed_original", {key: env.get(key) for key in CLAUDE_MANAGED_ENV})
 
     conflicts = claude_conflicting_env(env)
     if conflicts and not replace_existing:
-        fail(
-            f"{config_path} already routes OpenTelemetry signals elsewhere: "
-            + ", ".join(conflicts)
-            + ". Those entries would send full session content and the Flowlines key to that "
-            "collector. Remove them, or rerun with --replace-existing-otel to replace them "
-            "(the original file stays backed up)."
-        )
+        fail(claude_conflict_message(config_path, conflicts))
     removed = item.setdefault("removed_env", {})
     for key in conflicts:
         removed.setdefault(key, env.pop(key))
@@ -263,26 +306,15 @@ def configure_codex(
     hooks_path = paths["hooks"]
     codex_item = remember_original(paths, state, "codex", config_path)
     hooks_item = remember_original(paths, state, "hooks", hooks_path)
+    ensure_original_fields("codex", codex_item)
+    ensure_original_fields("hooks", hooks_item)
     refresh_backup_if_changed(paths, state, "codex", strip_managed_codex)
     refresh_backup_if_changed(paths, state, "hooks", strip_managed_hooks)
 
     existing_toml = config_path.read_text("utf-8") if config_path.exists() else ""
-    codex_item.setdefault(
-        "managed_original",
-        {
-            table: extract_toml_values(existing_toml, table, keys)
-            for table, keys in CODEX_MANAGED_KEYS.items()
-        },
-    )
     conflicts = codex_conflicting_exporters(existing_toml)
     if conflicts and not replace_existing:
-        fail(
-            f"{config_path} already configures a Codex OTel exporter: "
-            + ", ".join(conflicts)
-            + ". Codex supports one exporter, so it would be replaced by Flowlines. Remove it, "
-            "or rerun with --replace-existing-otel to replace it (the original file stays "
-            "backed up)."
-        )
+        fail(codex_conflict_message(config_path, conflicts))
     merged_toml, removed_tables = remove_toml_tables(existing_toml, CODEX_EXPORTER_TABLE)
     if removed_tables:
         codex_item.setdefault("removed_toml", []).extend(removed_tables)
@@ -308,9 +340,6 @@ def configure_codex(
         hooks["hooks"] = hook_map
     if not isinstance(hook_map, dict):
         fail(f"{hooks_path}: hooks must be a JSON object.")
-    hooks_item.setdefault(
-        "events_original", {event: event in hook_map for event in MANAGED_HOOK_EVENTS}
-    )
     command = '"$HOME/.local/lib/flowlines-agent-observability/codex-hook-relay.sh"'
     for event_name in MANAGED_HOOK_EVENTS:
         groups = hook_map.get(event_name, [])
@@ -496,7 +525,8 @@ def uninstall(paths: dict[str, Path]) -> int:
         if not isinstance(item, dict) or label not in STRIPPERS:
             continue
         destination = Path(item["path"])
-        if not destination.exists():
+        if not destination.exists() or item.get("installed_sha256") is None:
+            # Never written by a successful install (for example a refused one): leave it.
             continue
         backup = Path(item["backup"])
         if item.get("installed_sha256") == sha256_file(destination):
@@ -546,6 +576,42 @@ def remember_original(
     files[label] = item
     write_json(paths["state"], state, mode=0o600)
     return item
+
+
+def ensure_original_fields(label: str, item: dict[str, Any]) -> None:
+    """Record which managed values existed before the first install, reading the pre-install
+    backup rather than the live file. State written by earlier versions lacks these fields;
+    deriving them from the backup keeps an upgrade from mistaking Flowlines settings that are
+    already present for the user's own."""
+    marker = "events_original" if label == "hooks" else "managed_original"
+    if marker in item:
+        return
+    backup = Path(item["backup"])
+    content = backup.read_bytes() if backup.exists() else b""
+    if label == "claude":
+        try:
+            config = parse_json_object(content)
+        except ValueError:
+            config = {}
+        env = config.get("env")
+        item["env_absent_originally"] = not isinstance(env, dict)
+        env = env if isinstance(env, dict) else {}
+        item["managed_original"] = {key: env.get(key) for key in CLAUDE_MANAGED_ENV}
+        item.setdefault("removed_env", {})
+    elif label == "codex":
+        text = content.decode("utf-8", errors="replace")
+        item["managed_original"] = {
+            table: extract_toml_values(text, table, keys)
+            for table, keys in CODEX_MANAGED_KEYS.items()
+        }
+        item.setdefault("removed_toml", [])
+    elif label == "hooks":
+        try:
+            hook_map = parse_json_object(content).get("hooks")
+        except ValueError:
+            hook_map = None
+        existing = hook_map if isinstance(hook_map, dict) else {}
+        item["events_original"] = {event: event in existing for event in MANAGED_HOOK_EVENTS}
 
 
 def refresh_backup_if_changed(

@@ -31,7 +31,7 @@ scripts/doctor.sh
 
 `auto` detects Claude, Codex, or both. Use `--target claude`, `--target codex`, or `--target both` only when the user explicitly asks. A rerun is an idempotent repair that also folds edits the user made since the last install into the backup.
 
-If a config already routes OpenTelemetry signals elsewhere (signal-specific `OTEL_EXPORTER_OTLP_*` entries in Claude settings, or a Codex `[otel]` exporter that is not Flowlines), the installer stops and names the entries: keeping them would send full content and the Flowlines key to that collector, and Codex supports one exporter. Ask the user whether to replace them, then rerun with `--replace-existing-otel`; the removed entries stay in the backup and return on uninstall.
+The installer checks every requested target before changing anything, so a refusal never leaves one agent configured and the other not. If a config already routes OpenTelemetry signals elsewhere (signal-specific `OTEL_EXPORTER_OTLP_*` entries in Claude settings, or a Codex `[otel]` exporter that is not Flowlines), the installer stops and names the entries: keeping them would send full content and the Flowlines key to that collector, and Codex supports one exporter. Ask the user whether to replace them, then rerun with `--replace-existing-otel`; the removed entries stay in the backup and return on uninstall.
 
 For a chat-supplied key, start the installer in an interactive PTY, wait until it prints
 `Flowlines API key:`, and send the key followed by a newline to that running PTY. Do not
