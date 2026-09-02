@@ -107,6 +107,10 @@ To try the plugin from a checkout without installing it, run `claude --plugin-di
 
 The skills were moved here from [`flowlines-ai/mcp-server-observability`](https://github.com/flowlines-ai/mcp-server-observability) and [`flowlines-ai/coding-assistant-observability`](https://github.com/flowlines-ai/coding-assistant-observability).
 
+## Support
+
+Questions or issues: [support@flowlines.ai](mailto:support@flowlines.ai), or open an issue in this repository.
+
 ## License
 
 MIT

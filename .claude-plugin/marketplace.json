@@ -1,7 +1,7 @@
 {
   "$schema": "https://code.claude.com/schemas/marketplace.schema.json",
   "name": "flowlines",
-  "owner": { "name": "Flowlines", "url": "https://flowlines.ai" },
+  "owner": { "name": "Flowlines", "email": "support@flowlines.ai", "url": "https://flowlines.ai" },
   "metadata": {
     "description": "Official Flowlines plugins for Claude Code",
     "version": "0.1.0"
@@ -12,7 +12,7 @@
       "source": "./plugins/flowlines",
       "description": "Flowlines agent observability: analyse your Flowlines workspace over MCP, instrument MCP servers, and export Claude Code and Codex sessions.",
       "version": "0.1.0",
-      "author": { "name": "Flowlines", "url": "https://flowlines.ai" },
+      "author": { "name": "Flowlines", "email": "support@flowlines.ai", "url": "https://flowlines.ai" },
       "homepage": "https://flowlines.ai",
       "category": "observability",
       "keywords": ["flowlines", "observability", "mcp", "telemetry"]
