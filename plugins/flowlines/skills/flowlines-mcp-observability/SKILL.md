@@ -13,7 +13,7 @@ Before changing code or deployment configuration:
 
 1. Explain that supported MCP spans export validated tool arguments, final client-visible results, and user identity metadata to Flowlines. Identity metadata includes a stable user ID and, when available, name and email; these fields and payloads may contain personal data, customer data, source code, file content, or other sensitive values.
 2. Obtain explicit consent for payload export. Do not infer it from a generic request to "add telemetry."
-3. Ask the user to place the Flowlines API key in the target deployment's secret manager. Never request the key in chat, write it into source or examples, interpolate it into a command, or print an existing value.
+3. Confirm the user has a Flowlines namespace API key before touching the deployment. If they do not, tell them to create one in the Flowlines app under Settings, API keys, at `https://app.flowlines.ai/settings` for the namespace that should receive the data, and offer to open that page for them (`open` on macOS, `xdg-open` on Linux). The key is shown once at creation. Ask the user to place it in the target deployment's secret manager. Never request the key in chat, write it into source or examples, interpolate it into a command, or print an existing value.
 4. Treat the integration request as permission to edit and test the target repository, not to deploy it, call production tools, or mutate any production database.
 
 Read [references/contract.md](references/contract.md) before implementing or reviewing an integration.
@@ -74,6 +74,8 @@ Add tests at the middleware or wrapper boundary, using the stack's in-memory exp
 Run the target repository's narrow tests, formatter/linter, type checker, and package-manager checks. Never put a real API key in a test.
 
 Only perform live verification when the user has authorized network export and configured the key outside chat. Make ten harmless calls sharing a test `session.id` and stable test `user.id`, include a test name/email when those fields are supported, then make one final `report_outcome` call. Confirm Flowlines shows eleven accepted calls, reports successful calls as successful rather than unknown, maps all calls to the expected user ID, displays the mapped name/email, and shows the session intent, outcome, captured evidence, client attribution when supplied, and no persistent ingestion-quality issues. Behavioral clustering and tool-loop signals have separate volume and timing thresholds, so do not treat their immediate absence as exporter failure.
+
+Verifying receipt and the identity mapping needs the Flowlines MCP server signed in, or the Flowlines app. If the MCP server is connected but not authorised, ask the user to sign in first (`/mcp` in Claude Code, `codex mcp login flowlines` in Codex) rather than reporting the mapping as unverified. If neither is available, name the exact mapping to configure (`user.id` as the user ID, `name` to `user.name`, `email` to `user.email`) and where in the app to do it, and say that receipt was not verified.
 
 ## Hand off
 

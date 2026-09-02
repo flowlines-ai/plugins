@@ -13,10 +13,11 @@ Before installing or repairing:
 
 1. Explain that full prompts, assistant messages, tool inputs, and tool outputs will leave the machine and be sent to Flowlines.
 2. Obtain explicit consent. Never infer consent from a generic telemetry request.
-3. Prefer the installer's masked terminal prompt or a user-created `FLOWLINES_API_KEY_FILE`. If the user wants to provide the key in chat, first warn that it may remain in conversation history and obtain their explicit approval.
-4. After a key appears in chat, never repeat, inspect, log, or echo it. Do not place it in a command, environment assignment, temporary file, plan, commentary, or final response.
-5. Pass a chat-supplied key only to the masked `/dev/tty` prompt of `scripts/install.sh` through an interactive PTY. If the execution environment cannot send private input to a running PTY without rendering it, use the masked user-terminal or key-file flow instead.
-6. Stop on Windows; v1 supports macOS and Linux only.
+3. Confirm the user has a Flowlines namespace API key. If they do not, tell them to create one in the Flowlines app under Settings, API keys, at `https://app.flowlines.ai/settings` for the namespace that should receive the sessions, and offer to open that page for them (`open` on macOS, `xdg-open` on Linux). The key is shown once at creation.
+4. Prefer the installer's masked terminal prompt or a user-created `FLOWLINES_API_KEY_FILE`. If the user wants to provide the key in chat, first warn that it may remain in conversation history and obtain their explicit approval.
+5. After a key appears in chat, never repeat, inspect, log, or echo it. Do not place it in a command, environment assignment, temporary file, plan, commentary, or final response.
+6. Pass a chat-supplied key only to the masked `/dev/tty` prompt of `scripts/install.sh` through an interactive PTY. If the execution environment cannot send private input to a running PTY without rendering it, use the masked user-terminal or key-file flow instead.
+7. Stop on Windows; v1 supports macOS and Linux only.
 
 Read [references/configuration.md](references/configuration.md) before manually changing either agent's config.
 

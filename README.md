@@ -19,7 +19,7 @@ Official [Flowlines](https://flowlines.ai) plugins for coding agents. One reposi
 - `flowlines-mcp-observability` exports validated tool arguments, client-visible results, and user identity metadata from the instrumented server to Flowlines. That data can contain personal data, customer data, source code, or other sensitive content.
 - `flowlines-agent-observability` exports full prompts, assistant messages, tool inputs, and tool outputs from your machine to Flowlines.
 
-Both skills ask for explicit consent before changing anything, and neither prints or stores your Flowlines API key in chat.
+Both skills ask for explicit consent before changing anything, and neither prints or stores your Flowlines API key in chat. They need a namespace API key, created in the Flowlines app under Settings, API keys; the skills point you there and can open the page for you.
 
 ## Install
 
