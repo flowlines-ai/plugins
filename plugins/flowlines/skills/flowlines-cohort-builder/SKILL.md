@@ -23,14 +23,14 @@ The MCP server reads cohorts and compares them: `list_cohorts`, `get_cohort`, `c
 1. Restate the question as a rule. Every cohort rule has a `kind`; the vocabulary and operators are in [references/cohort-rules.md](references/cohort-rules.md). Examples:
    - "users who had a frustrated session in the last 14 days": `facetSentiment includes ["frustrated"]` with `windowDays: 14`.
    - "power users": `numeric powerScore gte <threshold>` or `numeric sessionCount gte <n>`.
-   - "at-risk accounts": `numeric successRate lt 0.5` and `recency inLastDays 30`.
+   - "at-risk accounts": `numeric successRate lt 50` (rates are 0 to 100) and `recency inLastDays 30`.
    - "everyone who asked about refunds": `intentFamily isOneOf ["refund"]`, using intent names from `aggregate_sessions` grouped by `intent`.
 2. `list_cohorts`. Reuse an existing or system cohort when one already expresses the question; note `matchedCount`, `totalCount`, and `matchedPercent`.
-3. Size the candidate group before creating anything. Use `list_users` with `order_by`, `minimum_sessions`, and `range` for count-based rules, `get_user_population_map` for a distribution, and `aggregate_sessions` grouped by `user` with the relevant filter for intent- or outcome-based rules. Report the estimated size and the share of identified users; a cohort over mostly unidentified users is not actionable, and `include_unidentified` shows the gap.
+3. Size the candidate group before creating anything. Use `list_users` with `order_by`, `minimum_sessions`, and `range` for count-based rules, `get_user_population_map` for a distribution, and `aggregate_sessions` grouped by `user` with the relevant filter for intent- or outcome-based rules. Report the estimated size and the identified share of sessions: `aggregate_sessions` with metric `session_count`, once with `include_unidentified: true` and once with `false`, divided. A cohort over mostly unidentified sessions is not actionable.
 4. Validate the rule on two or three users from the estimate with `get_user_activity`. Confirm they belong for the reason the user cares about, not by coincidence.
 5. Hand over the definition: name, one-line description, the aggregate (the users aggregate unless the user says otherwise), and the rules as JSON in the vocabulary. The app's rule suggestions can propose alternatives; mention them when the rule is a stretch.
 6. After the user creates it, `get_cohort` to confirm `ruleCount`, `matchedCount`, and `totalCount` match the estimate. A large mismatch usually means a `windowDays` or a threshold differs from the estimate's range.
-7. Compare: `compare_cohorts` against the baseline (usually the all-users system cohort or a mirror-image cohort), with `range` `7d`, `30d`, or `all`. The comparison reports entity count, session count, clean session rate, success rate, average cost, average latency, and signal rate for both sides. `get_metric_definition` before interpreting a rate.
+7. Compare: `compare_cohorts` against the baseline (usually the all-users system cohort or a mirror-image cohort), with `range` `7d`, `30d`, or `all`. The comparison reports entity count, session count, clean session rate, success rate, average cost, average latency, and signal rate for both sides; the rates are percentages from 0 to 100. `get_metric_definition` before interpreting a rate.
 8. Pin the definition and the headline comparison with `save_note` only if the cohort will be used again, and never with per-user detail.
 9. `report_outcome`.
 

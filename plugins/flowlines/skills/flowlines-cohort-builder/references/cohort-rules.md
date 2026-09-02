@@ -9,12 +9,12 @@ A cohort definition is `aggregateId`, `name`, an optional `description`, and a `
 Compare one per-user metric with a number.
 
 ```json
-{ "kind": "numeric", "field": "successRate", "op": "lt", "value": 0.5 }
+{ "kind": "numeric", "field": "successRate", "op": "lt", "value": 50 }
 ```
 
 - `field`: `csat`, `powerScore`, `sessionCount`, `successRate`, `cleanSessionRate`, `firstSeenDaysAgo`, `avgCostUsd`, `totalCostUsd`, `avgLatencyMs`, `cadence`, `signalCount`, `highSignalCount`, `mediumSignalCount`.
 - `op`: `eq`, `neq`, `lt`, `lte`, `gt`, `gte`.
-- Rates are fractions between 0 and 1, not percentages.
+- `successRate` and `cleanSessionRate` are percentages from 0 to 100, and the API compares the threshold directly: `lt 50` selects users below 50 percent success, while `lt 0.5` would select users below half a percent.
 
 ### `recency`
 
@@ -84,6 +84,6 @@ All of these require a signed-in user session (bearer JWT); namespace API keys d
 | `GET /namespaces/{id}/cohorts/rule-suggestions?aggregateId=` | Suggested rules with a rationale for the aggregate. |
 | `POST /namespaces/{id}/cohorts` | Create. Optional `category`, `isPinned`, `automationsConfig` (`hubspotListId`, `webhookUrl`). |
 | `POST /namespaces/{id}/cohorts/from-selection` | Create from a list of `sessionIds` instead of rules. |
-| `POST /namespaces/{id}/cohorts/compare` | Same comparison the MCP `compare_cohorts` tool returns. |
+| `POST /namespaces/{id}/cohorts/compare` | Same comparison the MCP `compare_cohorts` tool returns; its rates are percentages from 0 to 100. |
 
 The MCP tools `list_cohorts`, `get_cohort`, and `compare_cohorts` cover reading and comparing without a browser session.

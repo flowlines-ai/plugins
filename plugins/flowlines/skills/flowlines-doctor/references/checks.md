@@ -31,7 +31,7 @@ Installed by the `flowlines-agent-observability` skill.
 2. Conflicting exporters: `doctor.sh` fails when the Claude settings route signals to another collector or the Codex config carries another exporter. Reinstall with `--replace-existing-otel` after the user agrees.
 3. Codex hook trust: open `/hooks` in Codex and trust the Flowlines user hooks. Until then Codex may omit prompt, tool, and assistant content, and `codex exec` sends nothing through the hooks.
 4. Spool: pending events live under the Flowlines state directory in `spool/`. Each hook run sends the newest event first and drains at most five older ones within a two second budget, so a backlog clears over several turns. A spool that never drains means the relay cannot reach the endpoint; use the reachability check above from the same machine.
-5. Arrival: run one harmless prompt in the CLI, then `list_sessions` with `from` set a few minutes back. Claude Code sessions and Codex sessions arrive under their own agent names; `list_agents` shows the exact names in this namespace.
+5. Arrival: run one harmless prompt in the CLI, then `list_sessions` with `from` set a few minutes back. `from` filters on the session's start time, which is fine for a session you just created. Claude Code sessions and Codex sessions arrive under their own agent names; `list_agents` shows the exact names in this namespace.
 
 ## Instrumented MCP server
 
@@ -57,7 +57,7 @@ Configured under Settings, Connectors in the Flowlines app. Namespace API keys d
 2. Validate re-checks the provider credentials and reports the mode (`polling`, `push`, or `publicShare`), the visible projects, an estimated trace count, and the history window in days. `invalidCredentials` after validation means the provider key or project id is wrong or was rotated.
 3. Sync queues an immediate pull. Polling connectors otherwise pull on their own schedule; a `lastSyncedAt` that stops advancing while the status stays `configured` is the symptom to report.
 4. History: the connector only backfills the provider's history window. Older traces are not expected.
-5. Arrival: after a sync, `list_sessions` with `agent_name` set to the connector's agent and `from` set to the sync time.
+5. Arrival: imported sessions keep their original start times, and `list_sessions` filters on start time, not on when Flowlines received them, so a `from` set to the sync time can return nothing after a successful historical import. Instead, `aggregate_sessions` with `agent_name` set to the connector's agent and a range covering the provider's history window, before and after the sync, and compare `session_count`; or `get_session` on a trace id you know the provider holds.
 
 ## SDK and OTLP applications
 
@@ -75,7 +75,7 @@ Instrumented with the Flowlines SDKs or a plain OpenTelemetry exporter.
 |---|---|---|
 | Nothing arrives | `get_workspace`, `list_sessions` with `from` | ingestion status per namespace; recent arrivals |
 | Analysis stuck | `aggregate_sessions` grouped by `analysis_status` | `received` or `queued_for_analysis` growing, or `analysis_failed` present |
-| Users unidentified | `aggregate_sessions` with `include_unidentified` true vs false | identity mapping gap; then `list_agent_attributes` to find the attribute to map |
+| Users unidentified | `aggregate_sessions` metric `session_count`, `include_unidentified` true vs false | identified share of sessions (never `user_count`, which excludes empty ids); then `list_agent_attributes` to find the attribute to map |
 | Agent names split | `list_agents` | inconsistent service names |
 | Empty turns | `get_session` on one recent session | untrusted Codex hooks, or capture disabled on the emitter |
 | Known gaps | `list_notes` | already-pinned ingestion caveats |
