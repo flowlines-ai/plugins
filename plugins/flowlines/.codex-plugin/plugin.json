@@ -1,0 +1,29 @@
+{
+  "name": "flowlines",
+  "version": "0.1.0",
+  "description": "Flowlines agent observability: analyse your Flowlines workspace over MCP, instrument MCP servers, and export Claude Code and Codex sessions.",
+  "author": { "name": "Flowlines", "url": "https://flowlines.ai" },
+  "homepage": "https://flowlines.ai",
+  "repository": "https://github.com/flowlines-ai/plugins",
+  "license": "MIT",
+  "keywords": ["flowlines", "observability", "mcp", "telemetry", "opentelemetry", "analytics"],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Flowlines",
+    "shortDescription": "Agent observability for MCP servers and coding agents",
+    "longDescription": "Connects Codex to your Flowlines workspace over MCP so you can ask what your agents' users did, what changed since a release, and where sessions go wrong. Bundles two skills: one instruments an MCP server with the Flowlines telemetry contract, the other installs full-content telemetry for Claude Code and Codex CLI sessions.",
+    "developerName": "Flowlines",
+    "category": "Developer Tools",
+    "websiteURL": "https://flowlines.ai",
+    "privacyPolicyURL": "https://flowlines.ai/privacy",
+    "termsOfServiceURL": "https://flowlines.ai/terms",
+    "defaultPrompt": [
+      "What changed in my Flowlines namespace this week?",
+      "Use $flowlines-mcp-observability to instrument this MCP server.",
+      "Use $flowlines-agent-observability to export my Codex sessions."
+    ],
+    "composerIcon": "./assets/logo.png",
+    "logo": "./assets/logo.png"
+  }
+}

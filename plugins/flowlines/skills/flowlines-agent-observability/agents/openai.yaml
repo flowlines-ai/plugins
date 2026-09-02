@@ -1,0 +1,4 @@
+interface:
+  display_name: "Flowlines Agent Observability"
+  short_description: "Install Claude Code and Codex telemetry"
+  default_prompt: "Use $flowlines-agent-observability to install or repair Flowlines telemetry for my CLI agents."
