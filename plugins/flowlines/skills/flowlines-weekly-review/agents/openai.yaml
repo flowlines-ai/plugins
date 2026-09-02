@@ -1,0 +1,4 @@
+interface:
+  display_name: "Flowlines Weekly Review"
+  short_description: "What changed in a Flowlines namespace"
+  default_prompt: "Use $flowlines-weekly-review to review what changed in my Flowlines namespace since last week."

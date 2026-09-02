@@ -1,0 +1,4 @@
+interface:
+  display_name: "Flowlines Release Check"
+  short_description: "Did a release change agent outcomes"
+  default_prompt: "Use $flowlines-release-check to check whether my latest release changed outcomes in Flowlines."
