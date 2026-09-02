@@ -229,7 +229,7 @@ import json
 import os
 from pathlib import Path
 
-state_path = Path(os.environ["FLOWLINES_STATE"]) / "state.json"
+state_path = Path(os.environ["FLOWLINES_AGENT_CONFIG_HOME"]) / "flowlines-agent-observability" / "state.json"
 state = json.loads(state_path.read_text())
 for item in state["files"].values():
     for key in ("managed_original", "removed_env", "removed_toml", "events_original", "env_absent_originally"):
