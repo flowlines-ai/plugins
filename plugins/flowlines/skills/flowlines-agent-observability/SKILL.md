@@ -29,7 +29,9 @@ scripts/install.sh --target auto
 scripts/doctor.sh
 ```
 
-`auto` detects Claude, Codex, or both. Use `--target claude`, `--target codex`, or `--target both` only when the user explicitly asks. A rerun is an idempotent repair.
+`auto` detects Claude, Codex, or both. Use `--target claude`, `--target codex`, or `--target both` only when the user explicitly asks. A rerun is an idempotent repair that also folds edits the user made since the last install into the backup.
+
+If a config already routes OpenTelemetry signals elsewhere (signal-specific `OTEL_EXPORTER_OTLP_*` entries in Claude settings, or a Codex `[otel]` exporter that is not Flowlines), the installer stops and names the entries: keeping them would send full content and the Flowlines key to that collector, and Codex supports one exporter. Ask the user whether to replace them, then rerun with `--replace-existing-otel`; the removed entries stay in the backup and return on uninstall.
 
 For a chat-supplied key, start the installer in an interactive PTY, wait until it prints
 `Flowlines API key:`, and send the key followed by a newline to that running PTY. Do not
@@ -70,7 +72,7 @@ Warn that uninstall removes the local spool, which may contain unsent prompt or 
 scripts/uninstall.sh
 ```
 
-Uninstall restores the exact first-install versions of managed config files when they have not been edited since installation. If a managed file changed afterward, it refuses to overwrite it; inspect and remove only the Flowlines entries manually using the backup paths it reports.
+Uninstall restores the pre-install versions of managed config files when nothing else changed. If a managed file was edited after installation, it keeps those edits and removes only the Flowlines entries, restoring any values or exporters the installer had replaced.
 
 ## Verification
 

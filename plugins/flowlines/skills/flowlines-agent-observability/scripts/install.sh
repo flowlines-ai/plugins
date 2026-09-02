@@ -10,7 +10,7 @@ FLOWLINES_NON_INTERACTIVE=0
 FLOWLINES_AGENT_HOME="${FLOWLINES_AGENT_HOME:-${HOME}}"
 
 usage() {
-  printf '%s\n' "Usage: install.sh [--target auto|claude|codex|both] [--api-base URL] [--non-interactive]"
+  printf '%s\n' "Usage: install.sh [--target auto|claude|codex|both] [--api-base URL] [--non-interactive] [--replace-existing-otel]"
 }
 
 while [ "$#" -gt 0 ]; do
@@ -27,6 +27,12 @@ while [ "$#" -gt 0 ]; do
       ;;
     --non-interactive)
       FLOWLINES_NON_INTERACTIVE=1
+      shift
+      ;;
+    --replace-existing-otel)
+      # Existing OpenTelemetry exporters would otherwise receive full content and the key.
+      FLOWLINES_REPLACE_EXISTING_OTEL=yes
+      export FLOWLINES_REPLACE_EXISTING_OTEL
       shift
       ;;
     -h|--help)
@@ -97,7 +103,11 @@ if [ -n "${FLOWLINES_API_KEY_FILE:-}" ]; then
     printf '%s\n' "FLOWLINES_API_KEY_FILE is not readable." >&2
     exit 1
   }
-  IFS= read -r FLOWLINES_API_KEY < "${FLOWLINES_API_KEY_FILE}"
+  # read returns non-zero when the file has no trailing newline but still fills the variable.
+  IFS= read -r FLOWLINES_API_KEY < "${FLOWLINES_API_KEY_FILE}" || [ -n "${FLOWLINES_API_KEY}" ] || {
+    printf '%s\n' "FLOWLINES_API_KEY_FILE is empty." >&2
+    exit 1
+  }
 elif [ -z "${FLOWLINES_API_KEY:-}" ]; then
   if [ "${FLOWLINES_NON_INTERACTIVE}" -eq 1 ] || [ ! -r /dev/tty ]; then
     printf '%s\n' "Provide FLOWLINES_API_KEY_FILE or FLOWLINES_API_KEY." >&2

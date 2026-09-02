@@ -24,32 +24,52 @@ OTEL_EXPORTER_OTLP_ENDPOINT=https://api.flowlines.ai
 OTEL_EXPORTER_OTLP_HEADERS=x-flowlines-api-key=<deployment-secret>
 OBSERVE_HEADERS=<same-secret-backed-header-value>
 OBSERVE_METRICS_ENABLED=false
+OBSERVE_TRACE_CONTENT=false
+OBSERVE_SUPPRESS_WARNINGS=true
 OTEL_SERVICE_NAME=<stable-mcp-service-name>
 ```
 
 AGNTCY Observe reads exporter headers from `OBSERVE_HEADERS`; mirror the standard OTLP header value at deployment time. Do not commit either value. If the exporter requires a signal-specific URL, set `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=https://api.flowlines.ai/v1/traces`.
+
+`OBSERVE_TRACE_CONTENT=false` turns off prompt and completion capture in the SDK's LLM instrumentors. It does not affect the MCP instrumentor, which records validated tool arguments and results directly, so the Flowlines contract is unchanged.
 
 ## Initialize before MCP objects
 
 Run initialization during application startup before creating the MCP client or server:
 
 ```python
+import contextlib
 import os
+import sys
 
 from ioa_observe.sdk import Observe
 from ioa_observe.sdk.instrumentations.mcp import McpInstrumentor
+from ioa_observe.sdk.instruments import Instruments
 
 
 def configure_mcp_observability() -> None:
-    Observe.init(
-        app_name=os.environ.get("OTEL_SERVICE_NAME", "mcp-server"),
-        api_endpoint=os.environ["OTEL_EXPORTER_OTLP_ENDPOINT"],
-        telemetry_enabled=False,
-    )
-    McpInstrumentor().instrument()
+    # Observe.init prints coloured status banners to stdout. On a stdio transport stdout is
+    # the MCP channel, so route them to stderr.
+    with contextlib.redirect_stdout(sys.stderr):
+        Observe.init(
+            app_name=os.environ.get("OTEL_SERVICE_NAME", "mcp-server"),
+            api_endpoint=os.environ["OTEL_EXPORTER_OTLP_ENDPOINT"],
+            telemetry_enabled=False,
+            # Consent covers MCP tool calls only. Without this, init enables every LLM and
+            # HTTP instrumentor it can import and captures their prompts and responses.
+            block_instruments=set(Instruments),
+        )
+        McpInstrumentor().instrument()
 ```
 
 Call `configure_mcp_observability()` exactly once before constructing the server or registering transports. Preserve any target-specific application factory and import-order conventions.
+
+Scope the instrumentation deliberately:
+
+- `block_instruments=set(Instruments)` disables the SDK's LLM and HTTP instrumentors (Anthropic, OpenAI, LangChain, `requests`, `urllib3`, and the rest). Passing an empty `instruments` set does not work: the SDK treats it as "all instruments". The MCP instrumentor is separate and stays active. The SDK prints a red "No valid instruments set" warning to stdout in this configuration; the redirect above keeps it off the protocol channel.
+- If the server intentionally wants LLM spans too, obtain consent for that content separately and pass an explicit `instruments={...}` set instead of the block list.
+- Keep `OBSERVE_TRACE_CONTENT=false` in the deployment environment as a second guard for any instrumentor that is enabled later.
+- Servers on a stdio transport must never let the SDK write to stdout. Keep the `redirect_stdout` wrapper, verify with a smoke test that the first bytes on stdout are a JSON-RPC message, and treat any coloured banner in stdout as a protocol break.
 
 The integration must also:
 
