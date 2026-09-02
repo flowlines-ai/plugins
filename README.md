@@ -7,6 +7,11 @@ Official [Flowlines](https://flowlines.ai) plugins for coding agents. One reposi
 | `flowlines` MCP server | Connects your agent to your Flowlines workspace at `https://api.flowlines.ai/mcp`. Ask what your agents' users did, what changed since a release, where sessions go wrong, and record findings as notes. |
 | `flowlines-mcp-observability` skill | Instruments an MCP server so its tool calls arrive in Flowlines as canonical MCP telemetry, through AGNTCY Observe or vanilla OpenTelemetry. |
 | `flowlines-agent-observability` skill | Installs, repairs, diagnoses, or removes user-level Flowlines telemetry for Claude Code and Codex CLI sessions on macOS and Linux. |
+| `flowlines-weekly-review` skill | A periodic review over the MCP server: what changed since the last review, signals, outcome movements, and what to pin for next time. |
+| `flowlines-release-check` skill | Before-and-after comparison of an agent release: outcomes, intents, cost, signals, and evidence sessions, with the right denominators. |
+| `flowlines-investigate-session` skill | From a signal, a user, or a complaint to the failing turn, with minimal exposure of end-user content. |
+| `flowlines-cohort-builder` skill | Sizes a user segment, writes it in the Flowlines cohort rule vocabulary, and compares it against a baseline. |
+| `flowlines-doctor` skill | Diagnoses missing or incomplete data across every source: coding-agent telemetry, instrumented MCP servers, LangSmith and Langfuse connectors, and OTLP applications. |
 
 ## Privacy notice
 
@@ -24,7 +29,7 @@ Both skills ask for explicit consent before changing anything, and neither print
 claude plugin marketplace add flowlines-ai/plugins && claude plugin install flowlines@flowlines
 ```
 
-Then run `/mcp` inside Claude Code and sign in to `flowlines`. Skills are available as `/flowlines:flowlines-mcp-observability` and `/flowlines:flowlines-agent-observability`. Add `--scope project` to the install command to enable the plugin for one repository only.
+Then run `/mcp` inside Claude Code and sign in to `flowlines`. Skills are available as `/flowlines:<skill-name>`, for example `/flowlines:flowlines-weekly-review` or `/flowlines:flowlines-doctor`. Add `--scope project` to the install command to enable the plugin for one repository only.
 
 ### Codex CLI
 
@@ -32,7 +37,7 @@ Then run `/mcp` inside Claude Code and sign in to `flowlines`. Skills are availa
 codex plugin marketplace add flowlines-ai/plugins && codex plugin add flowlines@flowlines
 ```
 
-Then sign in with `codex mcp login flowlines`, or open `/plugins` inside Codex. Skills are available as `$flowlines-mcp-observability` and `$flowlines-agent-observability`.
+Then sign in with `codex mcp login flowlines`, or open `/plugins` inside Codex. Skills are available as `$<skill-name>`, for example `$flowlines-weekly-review` or `$flowlines-doctor`.
 
 The plugin registers an MCP server named `flowlines`. If you previously added the server by hand under the same name, remove that entry to avoid a duplicate.
 

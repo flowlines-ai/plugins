@@ -1,0 +1,4 @@
+interface:
+  display_name: "Flowlines Doctor"
+  short_description: "Diagnose missing or incomplete Flowlines data"
+  default_prompt: "Use $flowlines-doctor to find out why my sessions are not showing up in Flowlines."
