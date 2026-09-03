@@ -15,7 +15,7 @@ Do not use HTTP, transport, or sending middleware as the Flowlines MCP span boun
 
 If no MCP-level middleware exists, fall back to one small adapter around the shared MCP tool dispatcher. The middleware or wrapper needs:
 
-- published tool name;
+- published tool name and description from its registration, when available;
 - validated arguments, including `reason` and `user_intent`;
 - JSON-RPC request ID and request `_meta`;
 - a mandatory stable user ID resolved from verified authentication or required client metadata, plus verified or client-supplied name/email when available;
@@ -45,6 +45,9 @@ attributes = {
   gen_ai.tool.call.id: call_id,
   mcp.request.id: string(request_id),
 }
+
+if registered_tool_description is a non-empty string after trimming:
+  attributes["gen_ai.tool.description"] = trimmed description, at most 10,000 characters
 
 if _meta["session.id"] is a non-empty string:
   attributes["session.id"] = bounded value
@@ -103,6 +106,7 @@ export async function observeTool<T>(input: {
   tracer: Tracer;
   serverName: string;
   toolName: string;
+  toolDescription?: string;
   validatedArguments: Record<string, unknown> & {
     reason: string;
     user_intent: string;
@@ -123,6 +127,9 @@ export async function observeTool<T>(input: {
     "gen_ai.tool.call.id": randomUUID(),
     "user.id": input.user.id,
   };
+
+  const description = input.toolDescription?.trim();
+  if (description) attributes["gen_ai.tool.description"] = description.slice(0, 10_000);
 
   if (input.request.requestId !== undefined) {
     attributes["mcp.request.id"] = String(input.request.requestId);
@@ -174,6 +181,8 @@ function safeErrorType(value: string): string {
 }
 ```
 
+Pass `toolDescription` from the same registration metadata returned by `tools/list`; normalize dynamically typed metadata before passing it to the wrapper. Omit it when absent or blank. It is optional metadata, not a tool argument or a per-call reason.
+
 Production code must handle a serialization failure explicitly and should use the target's existing payload bounds. Ensure that `execute` includes public error mapping so `execution.result` is safe. Do not call `recordException` with a backend exception.
 
 ## Provider and exporter
@@ -203,6 +212,8 @@ OTEL_SERVICE_NAME=<stable-mcp-service-name>
 Use the target package manager, public package entry points, exact-version rules, and lockfile. Do not add an auto-instrumentation bundle when the focused tracing packages already satisfy the requirement.
 
 ## Tests
+
+Verify that a registered description reaches `gen_ai.tool.description`, that it is trimmed and capped at 10,000 characters, and that an absent or blank description omits the attribute.
 
 Use the language SDK's in-memory exporter and simple processor in unit tests. Assert the semantic contract, not the exact span implementation. Assert that a successful final MCP result has explicit `OK` span status and that a tool or protocol failure has explicit `ERROR` status; no completed test call may remain `UNSET`. Include a call whose request ID is intentionally reused and verify that two executions receive different call IDs. Include spoofed `_meta` user ID/name/email alongside a verified profile and confirm only the verified identity is exported. Include the metadata-only path and confirm it promotes exact `user.id`, `user.name`, and `user.email` attributes without serializing `_meta` into captured arguments.
 

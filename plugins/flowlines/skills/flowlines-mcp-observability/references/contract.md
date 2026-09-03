@@ -66,6 +66,7 @@ Set these attributes:
 |---|---|---|
 | `gen_ai.operation.name` | required | `execute_tool` |
 | `gen_ai.tool.name` | required | published MCP tool name |
+| `gen_ai.tool.description` | optional; send when available | published description from the tool registration, trimmed and capped at 10,000 characters |
 | `gen_ai.tool.call.reason` | required for behavioral analysis | validated `reason` |
 | `session.user_intent` | required for session goal | validated `user_intent` |
 | `gen_ai.tool.call.arguments` | required for evidence | serialized, valid JSON of the validated tool arguments |
@@ -80,6 +81,10 @@ Set these attributes:
 | `user.email` | required when available | verified email, otherwise client-supplied analytics value, promoted to the span |
 
 The call ID identifies an invocation. It may remain stable only when retrying export of that same span. Never derive it solely from `mcp.request.id`; clients may reuse JSON-RPC IDs across stateless requests.
+
+Read the description from the same registration metadata exposed through `tools/list`, and attach it to each `tools/call` span. Do not emit a separate `tools/list` span or infer a description from the tool name, reason, arguments, or another server's catalog. Omit absent, blank, or non-string descriptions.
+
+Flowlines accepts `gen_ai.tool.description` on vanilla and AGNTCY spans, with `mcp.tool.description` as a compatibility alias. After the description-support deployment, the tools list and detail page show the latest non-empty value for that namespace, server, and tool, independently of the selected activity range. Later calls without a description do not erase it. Existing calls are not backfilled; send a new call with the attribute to populate the UI.
 
 For compatibility during a staged reason rename, an emitter may also set `gen_ai.tool.call.intent` to the same value. New code must always set `gen_ai.tool.call.reason`.
 
@@ -184,7 +189,7 @@ After local in-memory span tests pass and live export is explicitly authorized:
 1. Make ten ordinary test calls carrying `reason`, `user_intent`, one stable test `session.id`, and one stable test `user.id`; include `user.name` and `user.email` when available.
 2. Make one final `report_outcome` call in the same session.
 3. Confirm Flowlines ingestion health shows eleven matched and accepted calls with no persistent pending calls.
-4. Confirm tool name, server, explicit successful status rather than unknown status, latency, session intent, captured evidence, and reported outcome.
+4. Confirm tool name, published description when available, server, explicit successful status rather than unknown status, latency, session intent, captured evidence, and reported outcome.
 5. Confirm every call and the session map to the exact test user ID, and confirm the user profile displays the mapped name/email rather than falling back to the raw ID.
 6. Treat clustering as eligible only after at least 20 valid-reason calls and three distinct normalized reasons.
 7. Tool-loop detection requires three adjacent calls to the same server/tool/reason in one metadata session within ten minutes.
