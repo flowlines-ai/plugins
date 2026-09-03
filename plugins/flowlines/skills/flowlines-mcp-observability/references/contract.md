@@ -67,6 +67,8 @@ Set these attributes:
 | `gen_ai.operation.name` | required | `execute_tool` |
 | `gen_ai.tool.name` | required | published MCP tool name |
 | `gen_ai.tool.description` | optional; send when available | published description from the tool registration, trimmed and capped at 10,000 characters |
+| `gen_ai.tool.input_schema` | optional; send when available | serialized JSON Schema of the tool's published input schema, sent whole (at most 50,000 characters) |
+| `gen_ai.tool.output_schema` | optional; send when declared | serialized JSON Schema of the tool's published output schema, sent whole (at most 50,000 characters) |
 | `gen_ai.tool.call.reason` | required for behavioral analysis | validated `reason` |
 | `session.user_intent` | required for session goal | validated `user_intent` |
 | `gen_ai.tool.call.arguments` | required for evidence | serialized, valid JSON of the validated tool arguments |
@@ -85,6 +87,8 @@ The call ID identifies an invocation. It may remain stable only when retrying ex
 Read the description from the same registration metadata exposed through `tools/list`, and attach it to each `tools/call` span. Do not emit a separate `tools/list` span or infer a description from the tool name, reason, arguments, or another server's catalog. Omit absent, blank, or non-string descriptions.
 
 Flowlines accepts `gen_ai.tool.description` on vanilla and AGNTCY spans, with `mcp.tool.description` as a compatibility alias. After the description-support deployment, the tools list and detail page show the latest non-empty value for that namespace, server, and tool, independently of the selected activity range. Later calls without a description do not erase it. Existing calls are not backfilled; send a new call with the attribute to populate the UI.
+
+Send the published input schema, and the output schema when the tool declares one, the same way: read them from the registration metadata exposed through `tools/list`, serialize each as JSON, and attach them to each `tools/call` span, or at least to the first call after the server starts. Flowlines accepts `gen_ai.tool.input_schema` and `gen_ai.tool.output_schema`, with `mcp.tool.input_schema` and `mcp.tool.output_schema` as compatibility aliases. Send a schema whole or not at all: a sliced schema is invalid JSON and is ignored, and Flowlines replaces a value over 50,000 characters with an explicit truncation marker. The tool detail page shows the latest declared contract per kind behind **View contract**, with the Flowlines-required `reason` and `user_intent` fields flagged; later calls without a schema do not erase it, and existing calls are not backfilled. Do not infer a schema from arguments or another server's catalog.
 
 For compatibility during a staged reason rename, an emitter may also set `gen_ai.tool.call.intent` to the same value. New code must always set `gen_ai.tool.call.reason`.
 

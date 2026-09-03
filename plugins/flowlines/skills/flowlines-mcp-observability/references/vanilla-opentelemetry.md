@@ -15,7 +15,7 @@ Do not use HTTP, transport, or sending middleware as the Flowlines MCP span boun
 
 If no MCP-level middleware exists, fall back to one small adapter around the shared MCP tool dispatcher. The middleware or wrapper needs:
 
-- published tool name and description from its registration, when available;
+- published tool name, description, and input/output JSON Schema from its registration, when available;
 - validated arguments, including `reason` and `user_intent`;
 - JSON-RPC request ID and request `_meta`;
 - a mandatory stable user ID resolved from verified authentication or required client metadata, plus verified or client-supplied name/email when available;
@@ -48,6 +48,11 @@ attributes = {
 
 if registered_tool_description is a non-empty string after trimming:
   attributes["gen_ai.tool.description"] = trimmed description, at most 10,000 characters
+
+if registered_input_schema exists and JSON(registered_input_schema) is at most 50,000 characters:
+  attributes["gen_ai.tool.input_schema"] = JSON(registered_input_schema)
+if registered_output_schema exists and JSON(registered_output_schema) is at most 50,000 characters:
+  attributes["gen_ai.tool.output_schema"] = JSON(registered_output_schema)
 
 if _meta["session.id"] is a non-empty string:
   attributes["session.id"] = bounded value
@@ -107,6 +112,8 @@ export async function observeTool<T>(input: {
   serverName: string;
   toolName: string;
   toolDescription?: string;
+  toolInputSchema?: Record<string, unknown>;
+  toolOutputSchema?: Record<string, unknown>;
   validatedArguments: Record<string, unknown> & {
     reason: string;
     user_intent: string;
@@ -130,6 +137,10 @@ export async function observeTool<T>(input: {
 
   const description = input.toolDescription?.trim();
   if (description) attributes["gen_ai.tool.description"] = description.slice(0, 10_000);
+  const inputSchema = serializedSchema(input.toolInputSchema);
+  if (inputSchema) attributes["gen_ai.tool.input_schema"] = inputSchema;
+  const outputSchema = serializedSchema(input.toolOutputSchema);
+  if (outputSchema) attributes["gen_ai.tool.output_schema"] = outputSchema;
 
   if (input.request.requestId !== undefined) {
     attributes["mcp.request.id"] = String(input.request.requestId);
@@ -179,9 +190,16 @@ function metadataString(
 function safeErrorType(value: string): string {
   return /^[A-Za-z0-9_.:/-]{1,128}$/.test(value) ? value : "Error";
 }
+
+/** A schema is sent whole or not at all: a sliced schema is no longer valid JSON. */
+function serializedSchema(schema: Record<string, unknown> | undefined): string | undefined {
+  if (schema === undefined) return undefined;
+  const serialized = JSON.stringify(schema);
+  return serialized.length <= 50_000 ? serialized : undefined;
+}
 ```
 
-Pass `toolDescription` from the same registration metadata returned by `tools/list`; normalize dynamically typed metadata before passing it to the wrapper. Omit it when absent or blank. It is optional metadata, not a tool argument or a per-call reason.
+Pass `toolDescription` from the same registration metadata returned by `tools/list`; normalize dynamically typed metadata before passing it to the wrapper. Omit it when absent or blank. It is optional metadata, not a tool argument or a per-call reason. Pass `toolInputSchema` and `toolOutputSchema` from that same metadata as the JSON Schema objects `tools/list` returns, so the emitted contract matches what clients see; omit an undeclared output schema.
 
 Production code must handle a serialization failure explicitly and should use the target's existing payload bounds. Ensure that `execute` includes public error mapping so `execution.result` is safe. Do not call `recordException` with a backend exception.
 
@@ -213,7 +231,7 @@ Use the target package manager, public package entry points, exact-version rules
 
 ## Tests
 
-Verify that a registered description reaches `gen_ai.tool.description`, that it is trimmed and capped at 10,000 characters, and that an absent or blank description omits the attribute.
+Verify that a registered description reaches `gen_ai.tool.description`, that it is trimmed and capped at 10,000 characters, and that an absent or blank description omits the attribute. Verify that the registered input and output schemas reach `gen_ai.tool.input_schema` and `gen_ai.tool.output_schema` serialized exactly as `tools/list` publishes them, and that a schema over 50,000 characters or an undeclared output schema omits the attribute.
 
 Use the language SDK's in-memory exporter and simple processor in unit tests. Assert the semantic contract, not the exact span implementation. Assert that a successful final MCP result has explicit `OK` span status and that a tool or protocol failure has explicit `ERROR` status; no completed test call may remain `UNSET`. Include a call whose request ID is intentionally reused and verify that two executions receive different call IDs. Include spoofed `_meta` user ID/name/email alongside a verified profile and confirm only the verified identity is exported. Include the metadata-only path and confirm it promotes exact `user.id`, `user.name`, and `user.email` attributes without serializing `_meta` into captured arguments.
 
