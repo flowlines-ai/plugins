@@ -4,14 +4,14 @@
   "owner": { "name": "Flowlines", "email": "support@flowlines.ai", "url": "https://flowlines.ai" },
   "metadata": {
     "description": "Official Flowlines plugins for Claude Code",
-    "version": "0.1.0"
+    "version": "0.2.0"
   },
   "plugins": [
     {
       "name": "flowlines",
       "source": "./plugins/flowlines",
-      "description": "Flowlines agent observability: analyse your Flowlines workspace over MCP, instrument MCP servers, and export Claude Code and Codex sessions.",
-      "version": "0.1.0",
+      "description": "Flowlines agent observability: analyse your Flowlines workspace over MCP and instrument MCP servers with the Flowlines telemetry contract.",
+      "version": "0.2.0",
       "author": { "name": "Flowlines", "email": "support@flowlines.ai", "url": "https://flowlines.ai" },
       "homepage": "https://flowlines.ai",
       "category": "observability",

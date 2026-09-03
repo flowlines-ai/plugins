@@ -43,20 +43,3 @@ jobs:
 
       - name: Validate skills
         run: python3 scripts/validate_skills.py
-
-  installer:
-    name: Agent observability installer (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - macos-latest
-          - ubuntu-latest
-    steps:
-      - name: Check out repository
-        # actions/checkout v6.0.3
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
-
-      - name: Test installer
-        run: plugins/flowlines/skills/flowlines-agent-observability/scripts/test_installer.sh

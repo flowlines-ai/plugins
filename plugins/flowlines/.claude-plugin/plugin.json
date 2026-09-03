@@ -1,8 +1,8 @@
 {
   "name": "flowlines",
   "displayName": "Flowlines",
-  "version": "0.1.0",
-  "description": "Flowlines agent observability: analyse your Flowlines workspace over MCP, instrument MCP servers, and export Claude Code and Codex sessions.",
+  "version": "0.2.0",
+  "description": "Flowlines agent observability: analyse your Flowlines workspace over MCP and instrument MCP servers with the Flowlines telemetry contract.",
   "author": { "name": "Flowlines", "email": "support@flowlines.ai", "url": "https://flowlines.ai" },
   "homepage": "https://flowlines.ai",
   "repository": "https://github.com/flowlines-ai/plugins",
