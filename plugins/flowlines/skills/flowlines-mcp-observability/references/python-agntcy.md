@@ -73,6 +73,7 @@ Scope the instrumentation deliberately:
 
 The integration must also:
 
+- read the published description from the tool registration when available, trim it, cap it at 10,000 characters, and set `gen_ai.tool.description` on the same MCP span; omit absent or blank descriptions;
 - add required `reason` and `user_intent` fields to every tool schema;
 - preserve `_meta["session.id"]` as request metadata;
 - resolve a stable user ID for every call, preferring the verified authenticated subject and otherwise requiring `_meta["user.id"]`;
@@ -84,11 +85,14 @@ The integration must also:
 
 ## Verify the emitted contract
 
+Do not assume the instrumentor exports tool descriptions. Check a completed span against the registered description. When needed, set `gen_ai.tool.description` at the existing central execution boundary on the actual AGNTCY MCP span. This optional field must not cause duplicate spans or a second provider; if it cannot be attached, report that descriptions will remain unavailable.
+
 Do not assume that a successful import proves the installed MCP version produces the needed attributes. In particular, do not assume AGNTCY promotes user name/email from MCP `_meta`. Use the target server's central execution/authentication boundary to set `user.id`, `user.name`, and `user.email` on the actual AGNTCY MCP span. If the instrumentor does not expose an active span or a required field at that boundary, fall back to the vanilla wrapper at MCP-level `tools/call` middleware or the shared dispatcher, prefer middleware when the framework has it, and disable overlapping Flowlines MCP coverage so the call is not duplicated.
 
 Add or adapt tests to exercise one complete tool call and inspect exported spans. Confirm Flowlines-recognized AGNTCY attributes identify:
 
 - operation `execute_tool` and the tool name;
+- the published description as `gen_ai.tool.description` when available, with trimming and the 10,000-character bound;
 - reason and user intent;
 - server identity;
 - unique invocation and request correlation;
