@@ -25,13 +25,12 @@ An accepted or bad-request status with the key (`2xx` or `400`) means the key au
 
 ## Claude Code and Codex CLI
 
-Installed by the `flowlines-agent-observability` skill.
+Both CLIs export through their own telemetry settings; there is no Flowlines-side switch.
 
-1. Run its `doctor.sh`. It checks that the Claude settings carry the telemetry variables and the Flowlines header, that the Codex config carries the exporter and hooks, that the three Codex hooks are present, file modes, and the relay. It also reports how many Codex events are pending in the local spool. It does not contact Flowlines.
-2. Conflicting exporters: `doctor.sh` fails when the Claude settings route signals to another collector or the Codex config carries another exporter. Reinstall with `--replace-existing-otel` after the user agrees.
-3. Codex hook trust: open `/hooks` in Codex and trust the Flowlines user hooks. Until then Codex may omit prompt, tool, and assistant content, and `codex exec` sends nothing through the hooks.
-4. Spool: pending events live under the Flowlines state directory in `spool/`. Each hook run sends the newest event first and drains at most five older ones within a two second budget, so a backlog clears over several turns. A spool that never drains means the relay cannot reach the endpoint; use the reachability check above from the same machine.
-5. Arrival: run one harmless prompt in the CLI, then `list_sessions` with `from` set a few minutes back. `from` filters on the session's start time, which is fine for a session you just created. Claude Code sessions and Codex sessions arrive under their own agent names; `list_agents` shows the exact names in this namespace.
+1. Claude Code: `~/.claude/settings.json` must carry, under `env`, `CLAUDE_CODE_ENABLE_TELEMETRY=1`, `CLAUDE_CODE_ENHANCED_TELEMETRY_BETA=1`, `OTEL_LOGS_EXPORTER=otlp`, `OTEL_TRACES_EXPORTER=otlp`, `OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf`, `OTEL_EXPORTER_OTLP_ENDPOINT` set to the Flowlines base URL, `OTEL_EXPORTER_OTLP_HEADERS` set to `x-flowlines-api-key=<secret>`, and the `OTEL_LOG_USER_PROMPTS`, `OTEL_LOG_ASSISTANT_RESPONSES`, `OTEL_LOG_TOOL_DETAILS`, and `OTEL_LOG_TOOL_CONTENT` flags set to `1` for full content. Signal-specific variables such as `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` override the base URL and merge headers, so an entry left over from another collector diverts content and the key; remove it.
+2. Codex: `~/.codex/config.toml` needs an `[otel]` table with `log_user_prompt = true` and an `exporter` pointing at the Flowlines `/v1/logs` endpoint with the key header, plus `[features] hooks = true`, and `~/.codex/hooks.json` must carry `UserPromptSubmit`, `PostToolUse`, and `Stop` command hooks that post to the Flowlines Codex events endpoint. Codex accepts one exporter, so a second `[otel.exporter.*]` table makes the file invalid.
+3. Codex hook trust: open `/hooks` in Codex and trust the user hooks. Until then Codex may omit prompt, tool, and assistant content, and `codex exec` sends nothing through the hooks.
+4. Arrival: run one harmless prompt in the CLI, then `list_sessions` with `from` set a few minutes back. `from` filters on the session's start time, which is fine for a session you just created. Claude Code sessions and Codex sessions arrive under their own agent names; `list_agents` shows the exact names in this namespace.
 
 ## Instrumented MCP server
 

@@ -6,7 +6,6 @@ Official [Flowlines](https://flowlines.ai) plugins for coding agents. One reposi
 |---|---|
 | `flowlines` MCP server | Connects your agent to your Flowlines workspace at `https://api.flowlines.ai/mcp`. Ask what your agents' users did, what changed since a release, where sessions go wrong, and record findings as notes. |
 | `flowlines-mcp-observability` skill | Instruments an MCP server so its tool calls arrive in Flowlines as canonical MCP telemetry, through AGNTCY Observe or vanilla OpenTelemetry. |
-| `flowlines-agent-observability` skill | Installs, repairs, diagnoses, or removes user-level Flowlines telemetry for Claude Code and Codex CLI sessions on macOS and Linux. |
 | `flowlines-weekly-review` skill | A periodic review over the MCP server: what changed since the last review, signals, outcome movements, and what to pin for next time. |
 | `flowlines-release-check` skill | Before-and-after comparison of an agent release: outcomes, intents, cost, signals, and evidence sessions, with the right denominators. |
 | `flowlines-investigate-session` skill | From a signal, a user, or a complaint to the failing turn, with minimal exposure of end-user content. |
@@ -17,9 +16,8 @@ Official [Flowlines](https://flowlines.ai) plugins for coding agents. One reposi
 
 - The MCP server reads production conversations between end users and your agents. Treat everything it returns as confidential; it never writes to your namespace except through the explicit `save_note` and `report_outcome` tools.
 - `flowlines-mcp-observability` exports validated tool arguments, client-visible results, and user identity metadata from the instrumented server to Flowlines. That data can contain personal data, customer data, source code, or other sensitive content.
-- `flowlines-agent-observability` exports full prompts, assistant messages, tool inputs, and tool outputs from your machine to Flowlines.
 
-Both skills ask for explicit consent before changing anything, and neither prints or stores your Flowlines API key in chat. They need a namespace API key, created in the Flowlines app under Settings, API keys; the skills point you there and can open the page for you.
+The instrumentation skill asks for explicit consent before changing anything and never prints or stores your Flowlines API key in chat. It needs a namespace API key, created in the Flowlines app under Settings, API keys; the skill points you there and can open the page for you.
 
 ## Install
 
@@ -90,12 +88,11 @@ Both clients read the same `.mcp.json` and `skills/` tree. Each client keeps its
 
 ## Development
 
-Validate the manifests with the real CLIs, then the skill packages and the installer:
+Validate the manifests with the real CLIs, then the skill packages:
 
 ```sh
 scripts/validate_plugins.sh
 python3 scripts/validate_skills.py
-plugins/flowlines/skills/flowlines-agent-observability/scripts/test_installer.sh
 ```
 
 `validate_plugins.sh` needs `claude` and `codex` on your `PATH`. It runs offline: Claude validates the manifests and Codex installs the plugin from this checkout into a throwaway `CODEX_HOME`.
