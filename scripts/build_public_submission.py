@@ -10,6 +10,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from zipfile import ZIP_DEFLATED, ZipFile
 
+from validate_branding import validate_logo
+
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "plugins" / "flowlines"
 ANALYSIS_SKILLS = (
@@ -36,6 +38,7 @@ def build(output: Path) -> Path:
 
 def write_submission(output: Path) -> None:
     source_manifest = json.loads((SOURCE / ".codex-plugin/plugin.json").read_text())
+    validate_logo(SOURCE / "assets/logo.png")
     plugin = output / "flowlines"
     manifest = {
         key: source_manifest[key]
