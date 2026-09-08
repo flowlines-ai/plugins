@@ -8,6 +8,7 @@ import json
 import re
 import shutil
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from zipfile import ZIP_DEFLATED, ZipFile
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -37,21 +38,35 @@ def write_json(path: Path, value: dict) -> None:
 
 def build(registered_app_id: str, output: Path) -> Path:
     registered_app_id = app_id(registered_app_id)
+    if output.exists() or output.is_symlink():
+        raise FileExistsError(f"Output already exists: {output}")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    # Publish only a complete package. Failed copies or ZIP writes are cleaned up
+    # by TemporaryDirectory so the same destination can be used on the next run.
+    with TemporaryDirectory(prefix=".flowlines-chatgpt-", dir=output.parent) as temporary:
+        staged = Path(temporary) / "package"
+        write_package(registered_app_id, staged)
+        if output.exists() or output.is_symlink():
+            raise FileExistsError(f"Output already exists: {output}")
+        staged.rename(output)
+    return output / "flowlines-chatgpt.zip"
+
+
+def write_package(registered_app_id: str, output: Path) -> None:
     source_manifest = json.loads((SOURCE / ".codex-plugin" / "plugin.json").read_text())
-    # Refuse an existing destination, including a dangling symlink. Never merge stale
-    # desktop MCP files into a package intended for ChatGPT web.
     output.mkdir(parents=True, exist_ok=False)
-    plugin = output / "plugins" / "flowlines"
+    plugin = output / "plugins" / "flowlines-chatgpt"
     manifest = {
         key: source_manifest[key]
-        for key in ("name", "version", "author", "homepage", "repository", "license", "keywords")
+        for key in ("version", "author", "homepage", "repository", "license", "keywords")
     }
     manifest.update({
+        "name": "flowlines-chatgpt",
         "description": "Analyse your Flowlines workspace in ChatGPT through the registered Flowlines MCP app.",
         "skills": "./skills/",
         "apps": "./.app.json",
         "interface": {
-            "displayName": "Flowlines",
+            "displayName": "Flowlines for ChatGPT",
             "shortDescription": "Investigate agent outcomes in your Flowlines workspace",
             "longDescription": "Review activity, compare releases, investigate sessions, and analyse user cohorts through the Flowlines MCP app. Save verified findings as workspace notes.",
             "developerName": "Flowlines",
@@ -76,14 +91,18 @@ def build(registered_app_id: str, output: Path) -> Path:
     (plugin / "assets").mkdir()
     shutil.copy2(SOURCE / "assets" / "logo.png", plugin / "assets" / "logo.png")
     for skill in ANALYSIS_SKILLS:
-        shutil.copytree(SOURCE / "skills" / skill, plugin / "skills" / skill)
+        shutil.copytree(
+            SOURCE / "skills" / skill,
+            plugin / "skills" / skill,
+            ignore=shutil.ignore_patterns(".DS_Store", "__pycache__", "*.pyc"),
+        )
     shutil.copy2(ROOT / "LICENSE", plugin / "LICENSE")
     write_json(output / ".agents" / "plugins" / "marketplace.json", {
         "name": "flowlines-chatgpt",
         "interface": {"displayName": "Flowlines for ChatGPT"},
         "plugins": [{
-            "name": "flowlines",
-            "source": {"source": "local", "path": "./plugins/flowlines"},
+            "name": "flowlines-chatgpt",
+            "source": {"source": "local", "path": "./plugins/flowlines-chatgpt"},
             "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
             "category": "Developer Tools",
         }],
@@ -93,7 +112,6 @@ def build(registered_app_id: str, output: Path) -> Path:
         for path in sorted(plugin.rglob("*")):
             if path.is_file():
                 bundle.write(path, path.relative_to(plugin))
-    return archive
 
 
 def main() -> None:

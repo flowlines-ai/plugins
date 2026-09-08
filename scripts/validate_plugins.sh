@@ -18,6 +18,15 @@ echo "== Codex"
 CODEX_HOME=$(mktemp -d)
 export CODEX_HOME
 trap 'rm -rf "${CODEX_HOME}"' EXIT HUP INT TERM
+
+echo "== ChatGPT package"
+python3 "${ROOT}/scripts/build_chatgpt_plugin.py" \
+  --app-id asdk_app_offline_test --output "${CODEX_HOME}/chatgpt"
+codex plugin marketplace add "${CODEX_HOME}/chatgpt" >/dev/null
+codex plugin add flowlines-chatgpt@flowlines-chatgpt --json
+codex mcp list --json > "${CODEX_HOME}/chatgpt-mcp.json"
+python3 -c 'import json,sys; servers=json.load(open(sys.argv[1])); sys.exit("ChatGPT package registered a desktop MCP server") if servers else None' "${CODEX_HOME}/chatgpt-mcp.json"
+
 codex plugin marketplace add "${ROOT}" >/dev/null
 for plugin in "${ROOT}"/plugins/*/; do
   name=$(basename "${plugin}")

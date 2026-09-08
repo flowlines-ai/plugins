@@ -30,7 +30,10 @@ jobs:
       - name: Install Claude Code and Codex CLIs
         run: npm install -g @anthropic-ai/claude-code@2.1.258 @openai/codex@0.152.1
 
-      - name: Validate manifests and install the plugin with both CLIs
+      - name: Test ChatGPT package
+        run: python3 -m unittest discover -s scripts -p 'test_chatgpt_plugin.py'
+
+      - name: Validate and install desktop and ChatGPT packages with the CLIs
         run: scripts/validate_plugins.sh
 
   skills:
@@ -43,9 +46,6 @@ jobs:
 
       - name: Validate skills
         run: python3 scripts/validate_skills.py
-
-      - name: Test ChatGPT package
-        run: python3 -m unittest discover -s scripts -p 'test_chatgpt_plugin.py'
 
   installer:
     name: Agent observability installer (${{ matrix.os }})
