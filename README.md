@@ -25,12 +25,17 @@ Both skills ask for explicit consent before changing anything, and neither print
 
 ### ChatGPT
 
-ChatGPT web needs a registered Flowlines MCP app. The existing marketplace
+On a personal Plus or Pro account, connect the Flowlines MCP server in
+Developer mode and select it from the chat composer's **+ → Developer mode**
+menu. See the [ChatGPT setup guide](docs/chatgpt.md) for the live tool check.
+This tests the server connection; it does not install the bundled skills.
+
+Workspace import requires admin access. The existing marketplace
 declares `.mcp.json` and is classified as desktop only on workspace import,
 even though the server uses HTTPS. Adding the plugin's skills does not connect
 the MCP tools.
 
-Use the [ChatGPT setup guide](docs/chatgpt.md) to import the marketplace at
+Workspace admins can use the [ChatGPT setup guide](docs/chatgpt.md) to import the marketplace at
 `chatgpt/`. Its `flowlines-chatgpt` package, displayed as **Flowlines for ChatGPT**,
 references the registered Flowlines app and includes the four analysis skills
 with their resources. Workspace access and live tool calls must still be

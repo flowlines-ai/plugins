@@ -2,8 +2,8 @@
 
 The desktop package at `plugins/flowlines` declares its server in `.mcp.json`.
 ChatGPT workspace import marks a plugin with MCP server declarations as
-**Desktop only**, including remote HTTPS servers. A ChatGPT web package must
-reference a registered app through `.app.json` instead.
+**Desktop only**, including remote HTTPS servers. For workspace import, a
+ChatGPT web package must reference a registered app through `.app.json` instead.
 
 The build command below creates a separate `flowlines-chatgpt` package,
 displayed as **Flowlines for ChatGPT**, with the Flowlines logo. This keeps it
@@ -13,12 +13,41 @@ investigations, and cohort analysis. Instrumentation, local telemetry setup,
 and local diagnostics remain in the desktop package. The source skills and
 existing marketplace are not modified.
 
-## Import the workspace package
+## Personal Plus or Pro account
+
+The **Admin → Plugins → Import marketplace** flow requires a workspace admin.
+It is not the installation path for a personal account. Developer mode supports
+personal Plus and Pro accounts and can test the Flowlines MCP connection
+directly, without importing a marketplace or merging this PR.
+
+After completing **Register and verify the connection** below:
+
+1. Start a fresh ChatGPT web conversation.
+2. Open the composer's **+ → Developer mode** menu and select **Flowlines**.
+3. Ask: "Use Flowlines get_workspace to list my workspaces and namespaces."
+4. Select a namespace from the result and ask: "Use Flowlines get_context to
+   show an overview of namespace [ID]."
+5. Expand the tool call details and confirm both calls return real workspace
+   data. Record success or the exact error, without copying private payloads
+   into this repository.
+
+This verifies the MCP connection. It does not install or validate the four
+bundled skills on ChatGPT web. The local marketplace supports desktop testing;
+the workspace import below needs admin access. A personal-account web install
+of the complete private package has not been verified. Public distribution
+uses the separate submission process at the end of this guide.
+
+See the [Developer mode guide](https://developers.openai.com/api/docs/guides/developer-mode)
+for account eligibility and the conversation selector.
+
+## Import the workspace package (admins)
 
 The committed marketplace at `chatgpt/` references Flowlines app
 `asdk_app_6a9fca3f79688191832c5679c1691a0f`. Use it in a workspace that has
-access to this connection. The app ID is a non-secret reference; each user
-must still complete sign-in.
+access to this connection. This ID was supplied from a personal account;
+access from a shared workspace has not been verified. A workspace admin must
+confirm access or rebuild with an app ID available in that workspace. The app
+ID is a non-secret reference; each user must still complete sign-in.
 
 1. As a workspace admin, open **Admin → Plugins → Add → Import marketplace**.
 2. Set **Source** to `https://github.com/flowlines-ai/plugins` and **Path** to
