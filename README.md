@@ -30,10 +30,11 @@ declares `.mcp.json` and is classified as desktop only on workspace import,
 even though the server uses HTTPS. Adding the plugin's skills does not connect
 the MCP tools.
 
-Use the [ChatGPT setup guide](docs/chatgpt.md) to register the app and build a
-separate `flowlines-chatgpt` package, displayed as **Flowlines for ChatGPT**,
-bound to its app ID. The build copies the four analysis skills and their
-resources from this repository. The existing desktop package stays unchanged.
+Use the [ChatGPT setup guide](docs/chatgpt.md) to import the marketplace at
+`chatgpt/`. Its `flowlines-chatgpt` package, displayed as **Flowlines for ChatGPT**,
+references the registered Flowlines app and includes the four analysis skills
+with their resources. Workspace access and live tool calls must still be
+verified. The existing desktop package stays unchanged.
 
 ### Claude Code
 

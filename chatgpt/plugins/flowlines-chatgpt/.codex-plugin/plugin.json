@@ -1,0 +1,44 @@
+{
+  "version": "0.1.0",
+  "author": {
+    "name": "Flowlines",
+    "email": "support@flowlines.ai",
+    "url": "https://flowlines.ai"
+  },
+  "homepage": "https://flowlines.ai",
+  "repository": "https://github.com/flowlines-ai/plugins",
+  "license": "MIT",
+  "keywords": [
+    "flowlines",
+    "observability",
+    "mcp",
+    "telemetry",
+    "opentelemetry",
+    "analytics"
+  ],
+  "name": "flowlines-chatgpt",
+  "description": "Analyse your Flowlines workspace in ChatGPT through the registered Flowlines MCP app.",
+  "skills": "./skills/",
+  "apps": "./.app.json",
+  "interface": {
+    "displayName": "Flowlines for ChatGPT",
+    "shortDescription": "Investigate agent outcomes in your Flowlines workspace",
+    "longDescription": "Review activity, compare releases, investigate sessions, and analyse user cohorts through the Flowlines MCP app. Save verified findings as workspace notes.",
+    "developerName": "Flowlines",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://flowlines.ai",
+    "privacyPolicyURL": "https://flowlines.ai/privacy",
+    "termsOfServiceURL": "https://flowlines.ai/terms",
+    "defaultPrompt": [
+      "What changed in my Flowlines namespace this week?",
+      "Compare agent outcomes before and after my latest release.",
+      "Investigate the unsuccessful sessions in my Flowlines workspace."
+    ],
+    "composerIcon": "./assets/logo.png",
+    "logo": "./assets/logo.png"
+  }
+}

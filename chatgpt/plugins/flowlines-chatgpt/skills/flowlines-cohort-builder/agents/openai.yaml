@@ -1,0 +1,4 @@
+interface:
+  display_name: "Flowlines Cohort Builder"
+  short_description: "Size, define, and compare user cohorts"
+  default_prompt: "Use $flowlines-cohort-builder to define a Flowlines cohort of users who had a frustrated session this month."

@@ -84,6 +84,28 @@ class ChatGPTPluginTests(unittest.TestCase):
                     self.assertNotEqual(result.returncode, 0)
                     self.assertFalse(output.exists())
 
+    def test_committed_marketplace_matches_build(self) -> None:
+        committed = ROOT / "chatgpt"
+        apps = json.loads((committed / "plugins/flowlines-chatgpt/.app.json").read_text())
+        registered_id = apps["apps"]["flowlines"]["id"]
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "chatgpt"
+            build(registered_id, output)
+            # The ZIP is for local distribution and is not committed.
+            expected = {
+                path.relative_to(output): path.read_bytes()
+                for path in output.rglob("*")
+                if path.is_file() and path.name != "flowlines-chatgpt.zip"
+            }
+            actual = {
+                path.relative_to(committed): path.read_bytes()
+                for directory in (committed / ".agents", committed / "plugins")
+                for path in directory.rglob("*") if path.is_file()
+            }
+            self.assertEqual(set(actual), set(expected))
+            for path, content in expected.items():
+                self.assertEqual(actual[path], content, f"Regenerate chatgpt/: {path}")
+
     def test_existing_output_is_not_overwritten(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary)

@@ -13,6 +13,27 @@ investigations, and cohort analysis. Instrumentation, local telemetry setup,
 and local diagnostics remain in the desktop package. The source skills and
 existing marketplace are not modified.
 
+## Import the workspace package
+
+The committed marketplace at `chatgpt/` references Flowlines app
+`asdk_app_6a9fca3f79688191832c5679c1691a0f`. Use it in a workspace that has
+access to this connection. The app ID is a non-secret reference; each user
+must still complete sign-in.
+
+1. As a workspace admin, open **Admin → Plugins → Add → Import marketplace**.
+2. Set **Source** to `https://github.com/flowlines-ai/plugins` and **Path** to
+   `chatgpt`.
+3. To test PR #8 before merge, set **Branch, tag, or commit** to
+   `feat/flo-177-chatgpt-plugin`. After merge, use `main`.
+4. Import, then enable **Flowlines for ChatGPT** and its required app for the
+   intended roles.
+5. Install the plugin and follow the fresh-chat checks under **Verify before
+   release** below. A successful import does not verify live tool calls.
+
+Reuse the existing connection when it is available in your workspace. Only
+create another connection if your workspace needs its own app ID, then rebuild
+the package with that ID as described below.
+
 ## Register and verify the connection
 
 1. In ChatGPT, open **Settings → Security and login** and enable **Developer
@@ -26,6 +47,8 @@ existing marketplace are not modified.
 5. Copy the app ID from the connection's management URL. A URL containing
    `plugin_asdk_app_...` represents the app ID `asdk_app_...`. The build accepts
    either identifier and removes the `plugin_` prefix; do not pass the full URL.
+   Some settings URLs instead contain `connector=asdk_app_...`; copy that
+   parameter's value.
 
 The [packaging guide](https://developers.openai.com/plugins/build/plugins#create-and-test-a-plugin-locally-with-an-mcp-server)
 describes the mapping with a `plugin_asdk_app...` ID, but the
@@ -83,23 +106,21 @@ Plugins Directory's marketplace picker, and install the plugin. The ZIP is a
 portable copy of the same package; it does not create a connection or publish
 the plugin by itself.
 
-The intended workspace distribution is a committed `chatgpt/` marketplace
-directory in this repository. After verifying the real connection, build it:
+The committed `chatgpt/` marketplace is generated from the desktop source.
+After changes to the source skills, plugin version, or connection ID, build
+into a new directory:
 
 ```sh
 python3 scripts/build_chatgpt_plugin.py \
   --app-id "$FLOWLINES_CHATGPT_APP_ID" \
-  --output chatgpt
+  --output dist/chatgpt-next
 ```
 
-Review and commit `chatgpt/.agents/plugins/marketplace.json` and
-`chatgpt/plugins/` through a PR. As a workspace admin, open **Admin → Plugins →
-Add → Import marketplace**, set **Source** to `https://github.com/flowlines-ai/plugins`,
-and set **Path** to `chatgpt`. Configure the plugin and its required app for
-the intended roles. Do not import the root desktop marketplace for ChatGPT
-web. `dist/` is reserved for local runs and is ignored; generated ZIPs under
-`chatgpt/` are also ignored. No committed ChatGPT marketplace is ready until
-the real app ID is supplied and its connection is tested.
+Review the output and replace `chatgpt/.agents/` and `chatgpt/plugins/` with
+the generated copies through a PR. The packaging tests compare these committed
+files with a fresh build so that copied skills and metadata cannot drift.
+Do not import the root desktop marketplace for ChatGPT web. `dist/` is reserved
+for local runs and is ignored; generated ZIPs under `chatgpt/` are also ignored.
 
 Building a ZIP or importing skills alone does not prove that the connection
 works. Do not mark [FLO-177](https://linear.app/flowline/issue/FLO-177/make-flowlines-plugin-work-in-chatgpt)
@@ -126,9 +147,11 @@ Offline packaging checks run with:
 python3 -m unittest discover -s scripts -p 'test_chatgpt_plugin.py'
 ```
 
-These use a fixture ID. They verify the package and archive, app ID handling,
+These run without contacting ChatGPT or Flowlines. They verify the package
+and archive with a fixture ID, app ID handling,
 skill resources, exclusion of local cache files, cleanup after a failed build,
-and preservation of the desktop source. The CI manifests job also runs
+preservation of the desktop source, and consistency of the committed workspace
+package with a fresh build. The CI manifests job also runs
 `scripts/validate_plugins.sh`, which uses the pinned CLI to install the generated
 fixture package in a temporary home and check that it registers no desktop
 MCP server before installing the original desktop package. These checks do

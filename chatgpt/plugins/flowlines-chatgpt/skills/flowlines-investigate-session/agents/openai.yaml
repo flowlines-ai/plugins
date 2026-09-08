@@ -1,0 +1,4 @@
+interface:
+  display_name: "Flowlines Investigation"
+  short_description: "From a signal or complaint to the failing turn"
+  default_prompt: "Use $flowlines-investigate-session to investigate why this Flowlines signal is firing."
