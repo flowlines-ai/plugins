@@ -52,6 +52,7 @@ def write_submission(output: Path) -> None:
             "category": "Developer Tools",
             "capabilities": ["Read", "Write"],
             "websiteURL": source_manifest["interface"]["websiteURL"],
+            "supportURL": "https://github.com/flowlines-ai/plugins/issues",
             "privacyPolicyURL": source_manifest["interface"]["privacyPolicyURL"],
             "termsOfServiceURL": source_manifest["interface"]["termsOfServiceURL"],
             "defaultPrompt": [

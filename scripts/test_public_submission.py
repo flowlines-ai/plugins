@@ -40,6 +40,12 @@ class PublicSubmissionTests(unittest.TestCase):
             self.assertEqual(manifest["name"], "flowlines")
             self.assertEqual(manifest["version"], source_manifest["version"])
             self.assertEqual(manifest["interface"]["displayName"], "Flowlines")
+            support_url = "https://github.com/flowlines-ai/plugins/issues"
+            self.assertEqual(manifest["interface"]["supportURL"], support_url)
+            self.assertIn(
+                f"| Support | {support_url} |",
+                (ROOT / "docs/openai-submission.md").read_text(),
+            )
             self.assertEqual(manifest["skills"], "./skills/")
             for key in ("mcpServers", "apps", "hooks"):
                 self.assertNotIn(key, manifest)
@@ -58,6 +64,8 @@ class PublicSubmissionTests(unittest.TestCase):
                         self.assertEqual(path.read_bytes(), source.read_bytes())
             with ZipFile(output / "flowlines.zip") as archive:
                 self.assertIsNone(archive.testzip())
+                archived_manifest = json.loads(archive.read(".codex-plugin/plugin.json"))
+                self.assertEqual(archived_manifest["interface"]["supportURL"], support_url)
                 self.assertEqual(set(archive.namelist()), {
                     path.relative_to(plugin).as_posix()
                     for path in plugin.rglob("*") if path.is_file()
