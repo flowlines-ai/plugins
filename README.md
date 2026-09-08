@@ -109,7 +109,6 @@ Validate the manifests with the real CLIs, then the skill packages and the insta
 ```sh
 scripts/validate_plugins.sh
 python3 scripts/validate_skills.py
-python3 -m unittest discover -s scripts -p 'test_public_submission.py'
 plugins/flowlines/skills/flowlines-agent-observability/scripts/test_installer.sh
 ```
 
