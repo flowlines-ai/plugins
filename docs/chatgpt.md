@@ -1,221 +1,127 @@
-# Flowlines in ChatGPT
+# Flowlines in ChatGPT and Codex
 
-The desktop package at `plugins/flowlines` declares its server in `.mcp.json`.
-ChatGPT workspace import marks a plugin with MCP server declarations as
-**Desktop only**, including remote HTTPS servers. For workspace import, a
-ChatGPT web package must reference a registered app through `.app.json` instead.
+The public distribution target is one **Flowlines** plugin with the hosted MCP
+server and four shared analysis skills. Publish it through OpenAI's **With MCP**
+submission flow to the universal Plugins Directory shared by ChatGPT and Codex.
+The production server is `https://api.flowlines.ai/mcp`.
 
-The build command below creates a separate `flowlines-chatgpt` package,
-displayed as **Flowlines for ChatGPT**, with the Flowlines logo. This keeps it
-distinct from the desktop `flowlines` plugin when both marketplaces are
-installed in one workspace. It includes weekly reviews, release checks, session
-investigations, and cohort analysis. Instrumentation, local telemetry setup,
-and local diagnostics remain in the desktop package. The source skills and
-existing marketplace are not modified.
+This repository prepares the submission. A merge does not publish the plugin,
+install it for users, or migrate existing installations. OpenAI review and
+publication are separate steps. No public listing or automatic installation
+sync has been verified yet.
 
-## Personal Plus or Pro account
+## Intended customer setup
 
-The **Admin → Plugins → Import marketplace** flow requires a workspace admin.
-It is not the installation path for a personal account. Developer mode supports
-personal Plus and Pro accounts and can test the Flowlines MCP connection
-directly, without importing a marketplace or merging this PR.
+After the public plugin is approved and published, customers should find
+**Flowlines** in the Plugins Directory, install it, and connect their Flowlines
+account when prompted. They should use that same listing in supported ChatGPT
+and Codex surfaces. Developer mode, a personal app ID, and workspace marketplace
+import are authoring and testing mechanisms, not the intended public setup.
 
-After completing **Register and verify the connection** below:
+One public listing does not establish that a single install or OAuth grant
+automatically propagates to every device or CLI environment. Run the installation
+checks below before describing the experience as "install once".
 
-1. Start a fresh ChatGPT web conversation.
-2. Open the composer's **+ → Developer mode** menu and select **Flowlines**.
-3. Ask: "Use Flowlines get_workspace to list my workspaces and namespaces."
-4. Select a namespace from the result and ask: "Use Flowlines get_context to
-   show an overview of namespace [ID]."
-5. Expand the tool call details and confirm both calls return real workspace
-   data. Record success or the exact error, without copying private payloads
-   into this repository.
+The initial public bundle contains:
 
-This verifies the MCP connection. It does not install or validate the four
-bundled skills on ChatGPT web. The local marketplace supports desktop testing;
-the workspace import below needs admin access. A personal-account web install
-of the complete private package has not been verified. Public distribution
-uses the separate submission process at the end of this guide.
+- `flowlines-weekly-review`
+- `flowlines-release-check`
+- `flowlines-investigate-session`
+- `flowlines-cohort-builder`
 
-See the [Developer mode guide](https://developers.openai.com/api/docs/guides/developer-mode)
-for account eligibility and the conversation selector.
+These skills use hosted tools and shared resources. Repository instrumentation,
+local telemetry setup, and local diagnostics remain available through the
+existing desktop marketplace. That marketplace and its `.mcp.json` integration
+are preserved for existing Claude Code and Codex users.
 
-## Import the workspace package (admins)
+## Prepare the public submission
 
-The committed marketplace at `chatgpt/` references Flowlines app
-`asdk_app_6a9fca3f79688191832c5679c1691a0f`. Use it in a workspace that has
-access to this connection. This ID was supplied from a personal account;
-access from a shared workspace has not been verified. A workspace admin must
-confirm access or rebuild with an app ID available in that workspace. The app
-ID is a non-secret reference; each user must still complete sign-in.
-
-1. As a workspace admin, open **Admin → Plugins → Add → Import marketplace**.
-2. Set **Source** to `https://github.com/flowlines-ai/plugins` and **Path** to
-   `chatgpt`.
-3. To test PR #8 before merge, set **Branch, tag, or commit** to
-   `feat/flo-177-chatgpt-plugin`. After merge, use `main`.
-4. Import, then enable **Flowlines for ChatGPT** and its required app for the
-   intended roles.
-5. Install the plugin and follow the fresh-chat checks under **Verify before
-   release** below. A successful import does not verify live tool calls.
-
-Reuse the existing connection when it is available in your workspace. Only
-create another connection if your workspace needs its own app ID, then rebuild
-the package with that ID as described below.
-
-## Register and verify the connection
-
-1. In ChatGPT, open **Settings → Security and login** and enable **Developer
-   mode**, if your workspace permits it.
-2. Open **Plugins**, select the plus button, and register Flowlines with the
-   MCP server URL `https://api.flowlines.ai/mcp` and OAuth authentication.
-3. Complete sign-in and consent. The server advertises dynamic client
-   registration and PKCE S256. Use the exact callback URI shown by ChatGPT if
-   configuring a predefined OAuth client.
-4. Check that tools such as `get_workspace` and `get_context` are discovered.
-5. Copy the app ID from the connection's management URL. A URL containing
-   `plugin_asdk_app_...` represents the app ID `asdk_app_...`. The build accepts
-   either identifier and removes the `plugin_` prefix; do not pass the full URL.
-   Some settings URLs instead contain `connector=asdk_app_...`; copy that
-   parameter's value.
-
-The [packaging guide](https://developers.openai.com/plugins/build/plugins#create-and-test-a-plugin-locally-with-an-mcp-server)
-describes the mapping with a `plugin_asdk_app...` ID, but the
-[workspace import guide](https://learn.chatgpt.com/docs/enterprise/plugin-management#reference-an-existing-app-with-appjson)
-explicitly requires the app ID without `plugin_`; this build follows the
-workspace import guide.
-
-The reference does not register an app, grant service access, or authenticate
-other users. A workspace admin must enable the referenced app for the intended
-roles. Each user must complete any required sign-in.
-
-## Build the workspace package
-
-From the repository root, set the variable to the real registered app ID:
+From the repository root:
 
 ```sh
-read -r FLOWLINES_CHATGPT_APP_ID
-python3 scripts/build_chatgpt_plugin.py \
-  --app-id "$FLOWLINES_CHATGPT_APP_ID" \
-  --output dist/chatgpt
+python3 scripts/build_public_submission.py --output dist/openai
 ```
 
-Python 3.9 or newer is required. The output directory must not already exist;
-choose a new directory for the next build. This prevents old `.mcp.json` files
-from being retained in a rebuilt package. A failed build removes its temporary
-files and leaves the destination available for a retry. The app ID is a reference, not a
-credential. Never put access tokens, API keys, or OAuth client secrets in it.
-
-The build produces:
+Use Python 3.9 or newer and a new output directory. The build creates:
 
 ```text
-dist/chatgpt/
-  .agents/plugins/marketplace.json
-  plugins/flowlines-chatgpt/
+dist/openai/
+  flowlines/
     .codex-plugin/plugin.json
-    .app.json
     assets/logo.png
     skills/
     LICENSE
-  flowlines-chatgpt.zip
+  flowlines.zip
+  openai-submission.md
+  chatgpt.md
 ```
 
-The manifest points `apps` to `./.app.json`. That file contains the registered
-app ID with `required: true`. There are no MCP server declarations or hooks.
-The ZIP contains the plugin files at its root, including the dotfiles.
+The archive contains the listing and skills portion of the submission. It
+contains no `.app.json`, personal app ID, desktop MCP declaration, or marketplace.
+It is not a connected plugin installer on its own. In the **same With MCP draft**,
+submit the production MCP URL, configure OAuth, and add the skills and listing
+assets. Do not create a second skills-only listing.
 
-For a local trial, add the generated directory as a local marketplace:
+Use the [submission worksheet and review cases](openai-submission.md). The portal
+must accept the uploaded skills, pass its scans, and bind the MCP tools before
+the complete plugin can be verified. Rebuild after changes to the source skills
+or version; the build always reads the existing `plugins/flowlines` source.
+
+Offline checks:
 
 ```sh
-codex plugin marketplace add ./dist/chatgpt
+python3 -m unittest discover -s scripts -p 'test_public_submission.py'
+scripts/validate_plugins.sh
 ```
 
-Refresh the ChatGPT desktop app, select **Flowlines for ChatGPT** in the
-Plugins Directory's marketplace picker, and install the plugin. The ZIP is a
-portable copy of the same package; it does not create a connection or publish
-the plugin by itself.
+The CLI check installs the skills portion in a temporary validation marketplace
+and confirms that it registers no desktop MCP server. This validates the local
+package shape, not portal acceptance or the final connected public plugin.
 
-The committed `chatgpt/` marketplace is generated from the desktop source.
-After changes to the source skills, plugin version, or connection ID, build
-into a new directory:
+## Test the MCP connection during development
 
-```sh
-python3 scripts/build_chatgpt_plugin.py \
-  --app-id "$FLOWLINES_CHATGPT_APP_ID" \
-  --output dist/chatgpt-next
-```
+Personal Plus and Pro accounts can use Developer mode without a workspace-admin
+menu. Enable **Settings → Security and login → Developer mode**. In ChatGPT's
+Plugins page, use the plus button to create a connection to the production URL
+with OAuth. Complete sign-in, then start a fresh web chat and select
+**+ → Developer mode → Flowlines**.
 
-Review the output and replace `chatgpt/.agents/` and `chatgpt/plugins/` with
-the generated copies through a PR. The packaging tests compare these committed
-files with a fresh build so that copied skills and metadata cannot drift.
-Do not import the root desktop marketplace for ChatGPT web. `dist/` is reserved
-for local runs and is ignored; generated ZIPs under `chatgpt/` are also ignored.
+Ask it to use `get_workspace`, choose a namespace from the returned data, and
+call `get_context` for that namespace. Inspect both tool calls. The maintainer
+reported successful OAuth and this live query test on 2026-09-08. This result
+verifies the direct MCP connection, not the submitted skill bundle or install
+synchronization.
 
-Building a ZIP or importing skills alone does not prove that the connection
-works. Do not mark [FLO-177](https://linear.app/flowline/issue/FLO-177/make-flowlines-plugin-work-in-chatgpt)
-complete until the live checks below pass.
+## Verify the complete public plugin
 
-## Verify before release
+Use the same account and workspace throughout the following checks. Record the
+canonical plugin ID, package version, client version, and date. The first pass
+needs a clean test account or environment without the custom-marketplace plugin.
 
-1. Install or sync the generated package and start a fresh ChatGPT web chat.
-2. Type `@Flowlines` and select **Flowlines for ChatGPT**: ask it to list the
-   workspaces you can access. Confirm an
-   actual `get_workspace` call returns your workspace data.
-3. Select a namespace from that response and ask for its overview. Confirm an
-   actual `get_context` call uses the selected namespace and returns data.
-4. Disconnect or use a user without access and confirm ChatGPT requests sign-in
-   or reports unavailable access without inventing workspace data.
-5. Record the registered app ID, package version, test time, and results. Avoid
-   storing workspace payloads or credentials in this public repository.
-6. Run `scripts/validate_plugins.sh` and verify the existing desktop clients
-   still discover the `flowlines` MCP server and can query a workspace.
+| Check | Evidence to record |
+| --- | --- |
+| Install Flowlines in ChatGPT web and complete OAuth | Public listing ID, install steps, and successful `get_workspace` / `get_context` calls. |
+| Open ChatGPT desktop Chat/Work, then Codex in the desktop app | Whether Flowlines is already enabled; each additional install or sign-in action required; successful tool calls. |
+| Open a fresh Codex CLI session signed in to the same account | Availability of the same plugin, additional setup required, and successful tool calls. |
+| Select each of the four skills | Correct skill selection, resource access, and expected workflow output from the review cases. |
+| Disconnect the service or use an account without access | Sign-in request or access error, with no invented or cross-account data. |
+| Upgrade an existing custom-marketplace user | Any duplicate listing or MCP server, which integration handles calls, and explicit migration steps if needed. |
 
-Offline packaging checks run with:
+Keep unsupported surfaces and any extra install/authentication steps visible in
+customer instructions. Do not claim automatic migration or "install once" until
+these checks pass. Record only test results, not private workspace payloads.
 
-```sh
-python3 -m unittest discover -s scripts -p 'test_chatgpt_plugin.py'
-```
+## OAuth compatibility follow-up
 
-These run without contacting ChatGPT or Flowlines. They verify the package
-and archive with a fixture ID, app ID handling,
-skill resources, exclusion of local cache files, cleanup after a failed build,
-preservation of the desktop source, and consistency of the committed workspace
-package with a fresh build. The CI manifests job also runs
-`scripts/validate_plugins.sh`, which uses the pinned CLI to install the generated
-fixture package in a temporary home and check that it registers no desktop
-MCP server before installing the original desktop package. These checks do
-not verify that a real app exists or that ChatGPT can authenticate.
-
-The copied `agents/openai.yaml` files retain the desktop `$skill` prompt syntax
-required by the shared skill validator. In ChatGPT, select skills with `@`;
-the generated plugin's starter prompts use plain language.
-
-## OAuth discovery check
-
-On 2026-09-08, production returned an unauthenticated `401` with
-`x-amzn-remapped-www-authenticate` instead of the standard `WWW-Authenticate`
-header. The public protected-resource metadata endpoint returned `200`.
-This is a separate compatibility risk, not proof that it caused the missing
-tools. Check the public endpoint and preserve the standard challenge header
-through the gateway as a separate compatibility check.
-[FLO-178](https://linear.app/flowline/issue/FLO-178/preserve-the-mcp-oauth-challenge-header-through-the-public-gateway)
-tracks the infrastructure fix separately from the connection test. It proposes
-a scoped Cloudflare response-header transform and requires an external HTTP
-smoke check through the gateway.
-
-## Public directory submission
-
-A workspace app reference does not publish Flowlines to the public directory.
-Use **With MCP** in the OpenAI submission portal and submit
-`https://api.flowlines.ai/mcp` directly, with authentication, review materials,
-and the analysis skills. **Skills only** is for packages that contain skills
-alone. The portal does not publish a reference to an existing integration.
-Public publication requires a separate review.
+On 2026-09-08, the public gateway returned unauthenticated `401` responses with
+`x-amzn-remapped-www-authenticate` instead of `WWW-Authenticate`. The personal
+Developer mode test still succeeded. [FLO-178](https://linear.app/flowline/issue/FLO-178/preserve-the-mcp-oauth-challenge-header-through-the-public-gateway)
+tracks the separate header fix and external smoke checks; no infrastructure
+fix is included here.
 
 ## References
 
-- [Workspace import, desktop-only packages, and app references](https://learn.chatgpt.com/docs/enterprise/plugin-management)
-- [Register and package an MCP connection](https://developers.openai.com/plugins/build/plugins)
-- [OAuth requirements](https://developers.openai.com/plugins/build/auth)
-- [Public submission requirements](https://developers.openai.com/plugins/deploy/submission)
-- [API Gateway header remapping](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-known-issues.html)
+- [Plugin architecture and the shared directory](https://developers.openai.com/plugins/concepts/plugins)
+- [Public submission](https://developers.openai.com/plugins/deploy/submission)
+- [Move an existing remote MCP plugin into one submission](https://developers.openai.com/plugins/guides/submit-claude-plugin)
+- [Developer mode](https://developers.openai.com/api/docs/guides/developer-mode)

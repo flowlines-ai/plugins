@@ -23,23 +23,19 @@ Both skills ask for explicit consent before changing anything, and neither print
 
 ## Install
 
-### ChatGPT
+### ChatGPT and Codex public plugin
 
-On a personal Plus or Pro account, connect the Flowlines MCP server in
-Developer mode and select it from the chat composer's **+ → Developer mode**
-menu. See the [ChatGPT setup guide](docs/chatgpt.md) for the live tool check.
-This tests the server connection; it does not install the bundled skills.
+The public distribution target is one **Flowlines** plugin with the hosted MCP
+server and four shared analysis skills in OpenAI's Plugins Directory. This
+repository prepares its submission; merging changes does not publish it or
+install it for users. A public listing and installation reuse across products
+still require review and verification.
 
-Workspace import requires admin access. The existing marketplace
-declares `.mcp.json` and is classified as desktop only on workspace import,
-even though the server uses HTTPS. Adding the plugin's skills does not connect
-the MCP tools.
-
-Workspace admins can use the [ChatGPT setup guide](docs/chatgpt.md) to import the marketplace at
-`chatgpt/`. Its `flowlines-chatgpt` package, displayed as **Flowlines for ChatGPT**,
-references the registered Flowlines app and includes the four analysis skills
-with their resources. Workspace access and live tool calls must still be
-verified. The existing desktop package stays unchanged.
+See the [shared plugin guide](docs/chatgpt.md) for the build and verification
+steps, and the [submission worksheet](docs/openai-submission.md) for listing
+assets and review cases. The existing desktop marketplace installs below
+continue to work. Personal ChatGPT accounts can test the server separately
+through Developer mode while the public submission is being prepared.
 
 ### Claude Code
 
@@ -113,6 +109,7 @@ Validate the manifests with the real CLIs, then the skill packages and the insta
 ```sh
 scripts/validate_plugins.sh
 python3 scripts/validate_skills.py
+python3 -m unittest discover -s scripts -p 'test_public_submission.py'
 plugins/flowlines/skills/flowlines-agent-observability/scripts/test_installer.sh
 ```
 
@@ -125,6 +122,10 @@ To try the plugin from a checkout without installing it, run `claude --plugin-di
 1. Bump `version` in `plugins/flowlines/.claude-plugin/plugin.json`, `plugins/flowlines/.codex-plugin/plugin.json`, and the plugin entry in `.claude-plugin/marketplace.json`.
 2. Merge to `main`. Marketplace installs track `main`; users pick up the new version with `claude plugin update flowlines@flowlines` or `codex plugin marketplace upgrade`.
 3. Tag the release with `claude plugin tag plugins/flowlines`.
+
+Public Plugins Directory releases use the separate
+[submission and publication process](docs/openai-submission.md). A repository
+merge or tag does not publish that listing.
 
 ## History
 

@@ -30,10 +30,10 @@ jobs:
       - name: Install Claude Code and Codex CLIs
         run: npm install -g @anthropic-ai/claude-code@2.1.258 @openai/codex@0.152.1
 
-      - name: Test ChatGPT package
-        run: python3 -m unittest discover -s scripts -p 'test_chatgpt_plugin.py'
+      - name: Test public submission assets
+        run: python3 -m unittest discover -s scripts -p 'test_public_submission.py'
 
-      - name: Validate and install desktop and ChatGPT packages with the CLIs
+      - name: Validate desktop plugin and public submission assets with the CLIs
         run: scripts/validate_plugins.sh
 
   skills:
