@@ -197,9 +197,9 @@ On 2026-09-08, production returned an unauthenticated `401` with
 header. The public protected-resource metadata endpoint returned `200`.
 This is a separate compatibility risk, not proof that it caused the missing
 tools. Check the public endpoint and preserve the standard challenge header
-through the gateway before the end-to-end authentication test.
+through the gateway as a separate compatibility check.
 [FLO-178](https://linear.app/flowline/issue/FLO-178/preserve-the-mcp-oauth-challenge-header-through-the-public-gateway)
-tracks the infrastructure fix and blocks the FLO-177 live check. It proposes
+tracks the infrastructure fix separately from the connection test. It proposes
 a scoped Cloudflare response-header transform and requires an external HTTP
 smoke check through the gateway.
 
