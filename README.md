@@ -23,6 +23,20 @@ Both skills ask for explicit consent before changing anything, and neither print
 
 ## Install
 
+### ChatGPT and Codex public plugin
+
+The public distribution target is one **Flowlines** plugin with the hosted MCP
+server and four shared analysis skills in OpenAI's Plugins Directory. This
+repository prepares its submission; merging changes does not publish it or
+install it for users. A public listing and installation reuse across products
+still require review and verification.
+
+See the [shared plugin guide](docs/chatgpt.md) for the build and verification
+steps, and the [submission worksheet](docs/openai-submission.md) for listing
+assets and review cases. The existing desktop marketplace installs below
+continue to work. Personal ChatGPT accounts can test the server separately
+through Developer mode while the public submission is being prepared.
+
 ### Claude Code
 
 ```sh
@@ -107,6 +121,10 @@ To try the plugin from a checkout without installing it, run `claude --plugin-di
 1. Bump `version` in `plugins/flowlines/.claude-plugin/plugin.json`, `plugins/flowlines/.codex-plugin/plugin.json`, and the plugin entry in `.claude-plugin/marketplace.json`.
 2. Merge to `main`. Marketplace installs track `main`; users pick up the new version with `claude plugin update flowlines@flowlines` or `codex plugin marketplace upgrade`.
 3. Tag the release with `claude plugin tag plugins/flowlines`.
+
+Public Plugins Directory releases use the separate
+[submission and publication process](docs/openai-submission.md). A repository
+merge or tag does not publish that listing.
 
 ## History
 

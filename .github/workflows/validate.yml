@@ -30,7 +30,10 @@ jobs:
       - name: Install Claude Code and Codex CLIs
         run: npm install -g @anthropic-ai/claude-code@2.1.258 @openai/codex@0.152.1
 
-      - name: Validate manifests and install the plugin with both CLIs
+      - name: Test public submission assets
+        run: python3 -m unittest discover -s scripts -p 'test_public_submission.py'
+
+      - name: Validate desktop plugin and public submission assets with the CLIs
         run: scripts/validate_plugins.sh
 
   skills:
