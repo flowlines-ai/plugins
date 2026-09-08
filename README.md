@@ -23,6 +23,18 @@ Both skills ask for explicit consent before changing anything, and neither print
 
 ## Install
 
+### ChatGPT
+
+ChatGPT web needs a registered Flowlines MCP app. The existing marketplace
+declares `.mcp.json` and is classified as desktop only on workspace import,
+even though the server uses HTTPS. Adding the plugin's skills does not connect
+the MCP tools.
+
+Use the [ChatGPT setup guide](docs/chatgpt.md) to register the app and build a
+separate package bound to its app ID. The build copies the four analysis skills
+and their resources from this repository. The existing desktop package stays
+unchanged.
+
 ### Claude Code
 
 ```sh

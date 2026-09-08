@@ -44,6 +44,9 @@ jobs:
       - name: Validate skills
         run: python3 scripts/validate_skills.py
 
+      - name: Test ChatGPT package
+        run: python3 -m unittest discover -s scripts -p 'test_chatgpt_plugin.py'
+
   installer:
     name: Agent observability installer (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
