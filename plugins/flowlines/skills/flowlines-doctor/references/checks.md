@@ -1,5 +1,7 @@
 # Flowlines ingestion checks by source
 
+Most steps below run from a shell or over the Flowlines MCP server. The ones that read a page of the Flowlines app cover facts the server does not expose: read them in the app when a signed-in browser session is available, otherwise name the page and what to look for and let the user read it. Changes in the app (validate, sync, toggles, mappings) are the user's actions.
+
 Production base URL: `https://api.flowlines.ai`. Replace it when the namespace runs against another deployment. None of the commands below need the API key unless stated, and the ones that do read it from a file so it never appears in a shell command, a transcript, or a process list.
 
 ## Reachability without a key
@@ -39,7 +41,7 @@ Set up by the `flowlines-mcp-observability` skill.
 
 1. Deployment variables: `OTEL_EXPORTER_OTLP_ENDPOINT` (the base URL), `OTEL_EXPORTER_OTLP_HEADERS` with the key from a secret, and `OTEL_SERVICE_NAME`. With AGNTCY Observe, `OBSERVE_HEADERS` must mirror the header value. Confirm they are present in the running process's environment, not only in a template.
 2. Emit ten tool calls carrying `reason`, `user_intent`, `session.id`, and a test `user.id`, then one `report_outcome` call.
-3. In the Flowlines app, open the MCP page. Its ingestion health is derived from a durable ledger of every MCP-shaped batch:
+3. On the MCP page of the Flowlines app, read the ingestion health, or ask the user to; the MCP server does not expose it. The status is derived from a durable ledger of every MCP-shaped batch:
    - **Healthy**: telemetry arrives and every accepted call was indexed within five minutes.
    - **Delayed**: accepted calls have stayed unindexed for five minutes; a Flowlines processing delay, not a client problem. Wait and re-check.
    - **Degraded**: batches arrive but no canonical call is accepted and quality issues explain why. Read the issue codes; they name the missing or malformed attribute. Fix the emitter contract.

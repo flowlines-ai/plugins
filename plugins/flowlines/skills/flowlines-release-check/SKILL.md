@@ -1,11 +1,18 @@
 ---
 name: flowlines-release-check
-description: Check whether a release of an agent changed its outcomes in Flowlines - compare sessions, success rates, intents, cost, and signals before and after a deploy over the Flowlines MCP server. Use when the user asks whether a deploy, prompt change, or new version regressed or improved anything, or wants a go/no-go after shipping.
+description: Check whether a release of an agent changed its outcomes in Flowlines - compare sessions, success rates, intents, cost, and signals before and after a deploy over the Flowlines MCP server. Use when the user asks whether a deploy, prompt change, or new version regressed or improved anything, or wants a go/no-go after shipping. Do not use for a general review of the namespace (flowlines-weekly-review), one failing session (flowlines-investigate-session), or missing data (flowlines-doctor).
 ---
 
 # Flowlines release check
 
 Answer "did the last release change anything?" with numbers that have the right denominators, evidence from real sessions, and an honest statement of what cannot be known yet.
+
+## Tool discipline
+
+- Answer from the Flowlines MCP server first. It holds the data this skill works on, and every step below is written for its tools.
+- Use the Flowlines app, a browser, or web search only when the server cannot provide something the question needs, or when the user asks for it. Say that you are doing so and why. Never use them for data the server exposes, and never as a first move.
+- When part of the question stays unanswered, say so in the answer and list it in `unmet_needs` of `report_outcome`, with a pointer to where the user can look.
+- Match the effort to the question. For a plain question, make the minimum calls (`get_workspace`, `get_context`, then the one or two tools that answer it), answer, and `report_outcome`. Run the full procedure below only when the user asks for a release check or a go/no-go, and skip `save_note` and evidence sessions unless the procedure runs in full or the user asks for them.
 
 ## Conventions for every Flowlines tool call
 
@@ -17,7 +24,7 @@ Answer "did the last release change anything?" with numbers that have the right 
 ## Inputs
 
 1. The agent. `list_agents` shows the names Flowlines observes; use the exact name in filters.
-2. The release boundary as an ISO 8601 timestamp. Take it from the user, the deploy log, or the release list in the Flowlines app under Versions. Flowlines records a release either from a reported agent version or from a detected prompt change; the app's release receipt shows which.
+2. The release boundary as an ISO 8601 timestamp. Take it from the user or the deploy log. If neither gives it, the release list in the Flowlines app under Versions has it and the MCP server does not; read it there or ask the user. Flowlines records a release either from a reported agent version or from a detected prompt change; the app's release receipt shows which.
 3. The comparison window. Default to the same number of days on each side of the boundary, at least 3 and at most 14, so both sides have comparable traffic. Say when the after-window is still short.
 
 ## Steps

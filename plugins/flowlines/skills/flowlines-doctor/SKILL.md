@@ -1,11 +1,17 @@
 ---
 name: flowlines-doctor
-description: Diagnose why data is not arriving in Flowlines, or is arriving incomplete, across every source - Claude Code and Codex telemetry, an instrumented MCP server, LangSmith or Langfuse connectors, and OTLP from an SDK-instrumented app - using local checks, the Flowlines MCP server, and the Flowlines app. Use when sessions are missing, analysis is stuck, users are unidentified, an integration was just set up and needs verification, or the Flowlines MCP connection requires sign-in or reconnection.
+description: Diagnose why data is not arriving in Flowlines, or is arriving incomplete, across every source - Claude Code and Codex telemetry, an instrumented MCP server, LangSmith or Langfuse connectors, and OTLP from an SDK-instrumented app - using local checks and the Flowlines MCP server. Use when sessions are missing, analysis is stuck, users are unidentified, an integration was set up but nothing arrives, or the Flowlines MCP connection requires sign-in or reconnection. Do not use to analyse data that is arriving; the Flowlines analysis skills cover that.
 ---
 
 # Flowlines doctor
 
 Work from the source towards Flowlines and stop at the first broken link. Each check states what it proves, so a green result is not mistaken for "everything works".
+
+## Tool discipline
+
+- Start with local checks (shell commands on this machine) and the Flowlines MCP server. They answer most questions and every step below is written for them.
+- Some facts live only in the Flowlines app: MCP ingestion health, connector status, the paused-server toggle, identity mappings. When a check needs one of them, read it in the app if a signed-in browser session is available, or ask the user to read it; say which you did. Do not open the app for anything the MCP server exposes, and do not search the web unless a fact is blocking the diagnosis.
+- Match the effort to the question. If the user asks one thing, for example whether sessions arrived in the last hour, make the one or two calls that answer it and stop. Run the full source-by-source procedure only when the user asks for a diagnosis, or when the quick check fails.
 
 ## Conventions
 
@@ -17,11 +23,10 @@ Work from the source towards Flowlines and stop at the first broken link. Each c
 
 An authentication failure is a prerequisite failure, not an ingestion finding. If a Flowlines MCP tool is blocked by a sign-in prompt or returns an authentication error such as `401`, `unauthorized`, `invalid_token`, or `login required`, you MUST make a bounded best effort to restore authentication before continuing:
 
-1. Use the client's dedicated MCP or plugin sign-in/reconnect action first. Prefer an available first-class UI or tool. From a shell, use `codex mcp login flowlines`; in Claude Code, invoke `/mcp`, select `flowlines`, and authenticate. Do not stop to ask which method to try when one of these is available.
-2. If the authentication action returns an authorization URL but does not launch it, open that exact URL with a direct OS URL opener or a non-interactive browser-opening API. Do not search for a login page, alter the URL, or paste an authorization URL containing state or codes into chat or the final report.
-3. Ask the user to complete any password, passkey, MFA, or consent step in the browser. Never request credentials or tokens, inspect password fields, enter secrets, complete MFA, or approve permissions on the user's behalf.
+1. Use the client's dedicated MCP or plugin sign-in/reconnect action first. From a shell, use `codex mcp login flowlines`; in Claude Code, invoke `/mcp`, select `flowlines`, and authenticate. Do not stop to ask which method to try when one of these is available.
+2. If the authentication action returns an authorization URL but does not launch it, open that exact URL with the OS URL opener (`open` on macOS, `xdg-open` on Linux). Do not search for a login page, alter the URL, or paste an authorization URL containing state or codes into chat or the final report.
+3. Ask the user to complete any password, passkey, MFA, or consent step in the browser. Never request credentials or tokens, inspect password fields, enter secrets, complete MFA, or approve permissions on the user's behalf. Do not drive the browser or use computer-use to advance the sign-in, unless the user explicitly asks you to.
 4. After the user completes the flow, retry one low-impact Flowlines call such as `get_workspace`, then resume the diagnosis. If a `403` persists after fresh authentication, ask the user to verify that the signed-in account can access the Flowlines workspace instead of repeating the login loop.
-5. Use computer-use interaction only as a last resort, after the dedicated authentication action and direct URL opening are unavailable or have failed. Limit it to opening or advancing the non-secret parts of the authentication UI; the user handles the secret-bearing and consent steps.
 
 If one fresh authentication attempt and one verification call still fail, stop retrying. Record the exact non-sensitive error and the actions attempted, explain what the user must do next, and mark Flowlines MCP checks as blocked. When authentication prevents every Flowlines tool call, note that `report_outcome` could not be sent instead of claiming it was.
 
@@ -40,8 +45,8 @@ Record the expected sources before checking any of them.
 Full procedures per source are in [references/checks.md](references/checks.md). In short:
 
 - **Claude Code or Codex telemetry.** Run the `doctor.sh` script installed by the `flowlines-agent-observability` skill; it validates local configuration only. Then run one harmless prompt and look for the session with `list_sessions` filtered to the last few minutes. For Codex, hooks must be trusted in `/hooks` before prompt and tool content arrive, and pending events sit in the local spool.
-- **An instrumented MCP server.** Confirm the OTLP environment variables are set in the deployment, run ten tool calls plus `report_outcome`, then read the ingestion health status on the MCP page of the Flowlines app. The five statuses and what each one implicates are in the reference. A paused server under Settings, MCP stops derived observability without stopping ingestion.
-- **LangSmith or Langfuse connectors.** Status lives under Settings, Connectors in the app: `disconnected`, `configured`, `invalidCredentials`, `syncing`, or `paused`, with the last validation and sync times. Validate, then queue a sync, then verify arrival over the provider's history window, since imported sessions keep their original dates.
+- **An instrumented MCP server.** Confirm the OTLP environment variables are set in the deployment, run ten tool calls plus `report_outcome`, then verify arrival over MCP: `list_agents` for the server's service name and `list_sessions` with `from` set a few minutes back. The ingestion health status (five values) is shown only on the MCP page of the Flowlines app, and the MCP server does not expose it or per-tool failure counts; read it there or ask the user to, and say what each status implicates, from the reference. A paused server under Settings, MCP stops derived observability without stopping ingestion.
+- **LangSmith or Langfuse connectors.** Status lives under Settings, Connectors in the app and is not exposed over MCP: `disconnected`, `configured`, `invalidCredentials`, `syncing`, or `paused`, with the last validation and sync times. Read it there or ask the user to; validation and sync are the user's actions. Then verify arrival over MCP across the provider's history window, since imported sessions keep their original dates.
 - **SDK or OTLP applications.** Check that the exporter points at the Flowlines base URL, that `/v1/traces` and `/v1/logs` are reachable from the host, and that the key header is set from a secret.
 
 ## Step 3: server-side symptoms
