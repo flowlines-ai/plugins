@@ -1,18 +1,23 @@
 """Offline checks for the public submission assets and desktop compatibility."""
 
+from __future__ import annotations
+
 import hashlib
 import json
 import re
 import shutil
+import struct
 import subprocess
 import sys
 import tempfile
 import unittest
+import zlib
 from pathlib import Path
 from unittest.mock import patch
 from zipfile import ZipFile
 
 from build_public_submission import ROOT, SOURCE, build
+from validate_branding import validate_logo
 from validate_skills import validate_relative_links, validate_skill
 
 
@@ -100,7 +105,56 @@ class PublicSubmissionTests(unittest.TestCase):
                 self.assertNotIn("@", prompt)
                 self.assertNotIn("\n", prompt)
             for key in ("composerIcon", "logo"):
-                self.assertTrue((output / "flowlines" / interface[key]).is_file())
+                image = output / "flowlines" / interface[key]
+                validate_logo(image)
+                with ZipFile(output / "flowlines.zip") as archive:
+                    self.assertEqual(archive.read(interface[key].removeprefix("./")), image.read_bytes())
+
+    def test_branding_rejects_invalid_images(self) -> None:
+        def chunk(kind: bytes, payload: bytes) -> bytes:
+            return struct.pack(">I", len(payload)) + kind + payload + struct.pack(">I", zlib.crc32(kind + payload))
+
+        def png(width: int, height: int, pixels: bytes | None = None) -> bytes:
+            header = struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0)
+            if pixels is None:
+                pixels = (b"\0" + b"\0" * width * 4) * height
+            return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header) + chunk(b"IDAT", zlib.compress(pixels)) + chunk(b"IEND", b"")
+
+        valid = png(48, 48)
+        cases = {
+            "format mismatch": b"JPEG data",
+            "too small": png(47, 47),
+            "not square": png(48, 49),
+            "too wide": png(4097, 4097, b""),
+            "too large": valid + b"\0" * (5 * 1024 * 1024),
+            "truncated": valid[:-1],
+            "checksum": valid[:29] + b"\0" * 4 + valid[33:],
+            "missing pixels": png(48, 48, b""),
+            "invalid filter": png(48, 48, (b"\x05" + b"\0" * 48 * 4) * 48),
+            "extra pixels": png(48, 48, b"\0" * (48 * 193 + 1)),
+        }
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "logo.png"
+            path.write_bytes(valid)
+            validate_logo(path)
+            for label, data in cases.items():
+                with self.subTest(label=label):
+                    path.write_bytes(data)
+                    with self.assertRaises(ValueError):
+                        validate_logo(path)
+
+    def test_invalid_branding_does_not_produce_a_submission(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "source"
+            (source / ".codex-plugin").mkdir(parents=True)
+            shutil.copy2(SOURCE / ".codex-plugin/plugin.json", source / ".codex-plugin/plugin.json")
+            (source / "assets").mkdir()
+            (source / "assets/logo.png").write_bytes(b"broken image")
+            with patch("build_public_submission.SOURCE", source):
+                with self.assertRaises(ValueError):
+                    build(root / "output")
+            self.assertFalse((root / "output").exists())
 
     def test_existing_output_is_not_overwritten(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

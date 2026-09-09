@@ -13,6 +13,12 @@ The generated `flowlines/.codex-plugin/plugin.json` contains the listing copy,
 source version, legal links, capabilities, and three starter prompts. Use that
 copy in the portal so the tested assets match the submitted version.
 
+The builder validates the shared logo and composer icon before writing the
+archive. Keep `assets/logo.png` as an 8-bit RGB/RGBA PNG without interlacing,
+square, 48–4,096 pixels per side, and at most 5 MiB. The checks reject damaged
+chunks and pixel data and verify that both manifest fields reference the same
+tested bytes in the generated directory and ZIP.
+
 | Field | Value or source |
 | --- | --- |
 | Submission type | With MCP, including skills |
@@ -92,6 +98,21 @@ cohort IDs, expected counts, and metric denominators in a private reviewer
 fixture sheet. Replace prompt placeholders in the portal with those fixture
 values. The data has not been provisioned by this PR, and the workflow cases
 below have not been executed against it.
+
+For each release, keep this evidence with the private fixture sheet:
+
+| Evidence | Required record |
+| --- | --- |
+| Source | Exact app, IaC, and plugins commit IDs and their CI run URLs |
+| Production scan | Timestamp, deployed app revision, tool inventory, schemas, titles, and all hint values |
+| Annotations | Copy the release's per-tool justifications from the app's `docs/mcp-publication-review.md`; reconcile them with the production scan before entering them in the portal |
+| Fixtures | Authorized and unauthorized account aliases, namespace/session/cohort IDs, release timestamp, fixed UTC windows, expected counts and denominators; no credentials in Git |
+| Each case | P1–P5 or N1–N3, client/product version, plugin version, execution time, actual tools/skill, result, pass/fail, and private evidence link |
+
+The app source review is preparation material for the publisher. Copy the
+approved justifications and runnable cases into the portal so reviewers need
+no access to the private app repository. A local contract test or a personal
+developer-mode connection is not a completed public-plugin workflow case.
 
 ## Positive review cases
 

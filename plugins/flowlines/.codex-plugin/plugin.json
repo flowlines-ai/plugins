@@ -12,7 +12,7 @@
   "interface": {
     "displayName": "Flowlines",
     "shortDescription": "Agent observability for MCP servers and coding agents",
-    "longDescription": "Connects Codex to your Flowlines workspace over MCP so you can ask what your agents' users did, what changed since a release, and where sessions go wrong. Bundles two skills: one instruments an MCP server with the Flowlines telemetry contract, the other installs full-content telemetry for Claude Code and Codex CLI sessions.",
+    "longDescription": "Connect to your Flowlines workspace over MCP to review agent activity, compare releases, investigate sessions, and analyse user cohorts. Includes skills to instrument MCP servers, export full-content Claude Code and Codex CLI telemetry, and diagnose missing data.",
     "developerName": "Flowlines",
     "category": "Developer Tools",
     "websiteURL": "https://flowlines.ai",
