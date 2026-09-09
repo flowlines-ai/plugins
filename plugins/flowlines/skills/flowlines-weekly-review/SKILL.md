@@ -1,11 +1,17 @@
 ---
 name: flowlines-weekly-review
-description: Produce a periodic review of a Flowlines namespace over the Flowlines MCP server - what changed since the last review, which signals fired, where outcomes moved, and what to pin for next time. Use when the user asks what changed, wants a weekly or monthly review, or asks for a status report on their agents.
+description: Produce a periodic review of a Flowlines namespace over the Flowlines MCP server - what changed since the last review, which signals fired, where outcomes moved, and what to pin for next time. Use only when the user explicitly asks for a weekly, monthly, or periodic review, a status report, or what changed over a period. Do not use for a single question about a metric, a session, a user, a release, or missing data; answer those directly with the MCP tools or use the matching Flowlines skill.
 ---
 
 # Flowlines weekly review
 
 Turn the Flowlines MCP tools into one repeatable review with a fixed shape, so successive reviews are comparable and nothing already known is re-derived.
+
+## Tool discipline
+
+- The Flowlines MCP server is the only data source for this skill. Do not open the Flowlines app, drive a browser, use computer-use, or search the web to find data, unless the user explicitly asks you to.
+- When the server cannot answer part of the question, say so in the answer and list it in `unmet_needs` of `report_outcome`. If the information lives in the Flowlines app, tell the user where to look; do not go there yourself.
+- Match the effort to the question. For a plain question, make the minimum calls (`get_workspace`, `get_context`, then the one or two tools that answer it), answer, and `report_outcome`. Run the full procedure below only when the user asks for a review or a status report, and skip `save_note` and evidence sessions unless the procedure runs in full or the user asks for them.
 
 ## Conventions for every Flowlines tool call
 
