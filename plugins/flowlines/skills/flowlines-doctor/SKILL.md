@@ -1,6 +1,6 @@
 ---
 name: flowlines-doctor
-description: Diagnose why data is not arriving in Flowlines, or is arriving incomplete, across every source - Claude Code and Codex telemetry, an instrumented MCP server, LangSmith or Langfuse connectors, and OTLP from an SDK-instrumented app - using local checks, the Flowlines MCP server, and the Flowlines app. Use when sessions are missing, analysis is stuck, users are unidentified, or an integration was just set up and needs verification.
+description: Diagnose why data is not arriving in Flowlines, or is arriving incomplete, across every source - Claude Code and Codex telemetry, an instrumented MCP server, LangSmith or Langfuse connectors, and OTLP from an SDK-instrumented app - using local checks, the Flowlines MCP server, and the Flowlines app. Use when sessions are missing, analysis is stuck, users are unidentified, an integration was just set up and needs verification, or the Flowlines MCP connection requires sign-in or reconnection.
 ---
 
 # Flowlines doctor
@@ -12,6 +12,18 @@ Work from the source towards Flowlines and stop at the first broken link. Each c
 - Flowlines MCP tools take `reason` and `user_intent`; keep `user_intent` identical, for example "Find out why Codex sessions stopped appearing in Flowlines".
 - Never print, echo, or paste a Flowlines API key. Reachability checks below work without one, and checks that need one read it from a file the user created.
 - End with `report_outcome` as the last Flowlines tool call, listing what could not be checked.
+
+## Restore Flowlines MCP authentication first
+
+An authentication failure is a prerequisite failure, not an ingestion finding. If a Flowlines MCP tool is blocked by a sign-in prompt or returns an authentication error such as `401`, `unauthorized`, `invalid_token`, or `login required`, you MUST make a bounded best effort to restore authentication before continuing:
+
+1. Use the client's dedicated MCP or plugin sign-in/reconnect action first. Prefer an available first-class UI or tool. From a shell, use `codex mcp login flowlines`; in Claude Code, invoke `/mcp`, select `flowlines`, and authenticate. Do not stop to ask which method to try when one of these is available.
+2. If the authentication action returns an authorization URL but does not launch it, open that exact URL with a direct OS URL opener or a non-interactive browser-opening API. Do not search for a login page, alter the URL, or paste an authorization URL containing state or codes into chat or the final report.
+3. Ask the user to complete any password, passkey, MFA, or consent step in the browser. Never request credentials or tokens, inspect password fields, enter secrets, complete MFA, or approve permissions on the user's behalf.
+4. After the user completes the flow, retry one low-impact Flowlines call such as `get_workspace`, then resume the diagnosis. If a `403` persists after fresh authentication, ask the user to verify that the signed-in account can access the Flowlines workspace instead of repeating the login loop.
+5. Use computer-use interaction only as a last resort, after the dedicated authentication action and direct URL opening are unavailable or have failed. Limit it to opening or advancing the non-secret parts of the authentication UI; the user handles the secret-bearing and consent steps.
+
+If one fresh authentication attempt and one verification call still fail, stop retrying. Record the exact non-sensitive error and the actions attempted, explain what the user must do next, and mark Flowlines MCP checks as blocked. When authentication prevents every Flowlines tool call, note that `report_outcome` could not be sent instead of claiming it was.
 
 ## Step 1: what should be arriving
 
