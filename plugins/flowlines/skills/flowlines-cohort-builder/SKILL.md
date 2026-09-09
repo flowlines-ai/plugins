@@ -9,8 +9,9 @@ A cohort is a saved rule set over a user aggregate that Flowlines keeps up to da
 
 ## Tool discipline
 
-- The Flowlines MCP server is the only data source for this skill. Do not open the Flowlines app, drive a browser, use computer-use, or search the web to find data, unless the user explicitly asks you to.
-- When the server cannot answer part of the question, say so in the answer and list it in `unmet_needs` of `report_outcome`. If the information lives in the Flowlines app, tell the user where to look; do not go there yourself.
+- Answer from the Flowlines MCP server first. It holds the data this skill works on, and every step below is written for its tools.
+- Use the Flowlines app, a browser, or web search only when the server cannot provide something the question needs, or when the user asks for it. Say that you are doing so and why. Never use them for data the server exposes, and never as a first move.
+- When part of the question stays unanswered, say so in the answer and list it in `unmet_needs` of `report_outcome`, with a pointer to where the user can look.
 - Match the effort to the question. For a plain question, make the minimum calls (`get_workspace`, `get_context`, then the one or two tools that answer it), answer, and `report_outcome`. Run the full procedure below only when the user asks for a cohort definition or a cohort comparison, and skip `save_note` and evidence sessions unless the procedure runs in full or the user asks for them.
 
 ## Conventions for every Flowlines tool call
@@ -22,7 +23,7 @@ A cohort is a saved rule set over a user aggregate that Flowlines keeps up to da
 
 ## What the MCP server can and cannot do
 
-The MCP server reads cohorts and compares them: `list_cohorts`, `get_cohort`, `compare_cohorts`, plus `list_users`, `get_user_population_map`, and `aggregate_sessions` with `cohort_ids` and `group_by: ["cohort"]`. Creating or editing a cohort happens in the Flowlines app, in the cohort builder on the Users view, or through the REST API with a signed-in user session. Namespace API keys only authenticate ingestion, so this skill produces a definition ready to paste into the builder and verifies the result afterwards. Do not open the app to create the cohort yourself unless the user explicitly asks; hand the definition over and wait.
+The MCP server reads cohorts and compares them: `list_cohorts`, `get_cohort`, `compare_cohorts`, plus `list_users`, `get_user_population_map`, and `aggregate_sessions` with `cohort_ids` and `group_by: ["cohort"]`. Creating or editing a cohort happens in the Flowlines app, in the cohort builder on the Users view, or through the REST API with a signed-in user session. Namespace API keys only authenticate ingestion, so this skill produces a definition ready to paste into the builder and verifies the result afterwards. Hand the definition over rather than creating it in the app yourself, unless the user asks you to.
 
 ## Steps
 
