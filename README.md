@@ -57,9 +57,11 @@ The plugin registers an MCP server named `flowlines`. If you previously added th
 
 ### MCP connection errors
 
-If Flowlines calls repeatedly return `Internal error` or `-32603` without a reconnect prompt, use `flowlines-doctor`. It checks the client status and relevant local logs before treating the failure as an authentication problem. When OAuth refresh has failed, it starts a native reconnect and verifies tool access before resuming your request.
+If Flowlines calls repeatedly return `Internal error` or `-32603` without a reconnect prompt, use `flowlines-doctor` when installed. It checks available client status and relevant local logs before treating the failure as an authentication problem. When OAuth refresh has failed, it uses an available native reconnect action or tells you how to reconnect in your client, then verifies tool access before resuming your request. No access to Flowlines infrastructure or server logs is needed.
 
-A completed browser sign-in must also save credentials in the client's secure store, such as macOS Keychain. If login succeeds but tool calls still fail, the MCP connection may need to be reloaded. The skill reports the remaining recovery step; it does not restart the app automatically.
+Recovery uses the failing client's sign-in flow on Windows, macOS, or Linux. Local CLI sign-in must complete credential storage; hosted connectors use their own connection status. If login succeeds but tool calls still fail, the MCP connection may need to be reloaded. The skill reports the remaining recovery step; it does not restart the app automatically.
+
+The public analysis bundle does not include `flowlines-doctor`. Its analysis skills use the client's native reconnect action for reported authentication problems and direct unresolved failures to Flowlines support.
 
 ## Team rollout
 
