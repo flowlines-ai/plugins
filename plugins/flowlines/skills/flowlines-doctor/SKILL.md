@@ -45,7 +45,7 @@ After the client reports a completed login, retry one read-only Flowlines call s
 
 If the same connection failure persists, use an available native action to reload that MCP connection once, then make one final read-only check. If reload is unavailable or verification still fails, stop. State what the client confirmed and that tool access remains unverified, name the error, and give the client-specific reconnect or restart step. Do not restart the whole app automatically or interrupt other work. A persistent `403` calls for checking account access to the workspace, not another login.
 
-When connection checks remain blocked, record what could not be checked. Do not repeat `report_outcome` after the same connection failure; state that it could not be delivered. Do not present unavailable namespace data as empty data.
+When connection checks remain blocked, record what could not be checked. Do not repeat `report_outcome` after the same connection failure. Do not present unavailable namespace data as empty data.
 
 ## Step 1: what should be arriving
 
