@@ -1,4 +1,4 @@
 interface:
   display_name: "Flowlines Doctor"
-  short_description: "Diagnose missing or incomplete Flowlines data"
+  short_description: "Diagnose Flowlines data and MCP connection failures"
   default_prompt: "Use $flowlines-doctor to find out why my sessions are not showing up in Flowlines."

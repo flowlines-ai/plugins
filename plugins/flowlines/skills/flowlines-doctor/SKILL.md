@@ -1,6 +1,6 @@
 ---
 name: flowlines-doctor
-description: Diagnose why data is not arriving in Flowlines, or is arriving incomplete, across every source - Claude Code and Codex telemetry, an instrumented MCP server, LangSmith or Langfuse connectors, and OTLP from an SDK-instrumented app - using local checks and the Flowlines MCP server. Use when sessions are missing, analysis is stuck, users are unidentified, an integration was set up but nothing arrives, or the Flowlines MCP connection requires sign-in or reconnection. Do not use to analyse data that is arriving; the Flowlines analysis skills cover that.
+description: Diagnose missing or incomplete Flowlines data and failed MCP connections using local checks and the Flowlines MCP server. Covers coding-agent telemetry, instrumented MCP servers, LangSmith and Langfuse connectors, and SDK OTLP. Use when sessions are missing, analysis is stuck, users are unidentified, or MCP calls fail or require sign-in. Do not use to analyse data that is arriving; the Flowlines analysis skills cover that.
 ---
 
 # Flowlines doctor
@@ -19,16 +19,33 @@ Work from the source towards Flowlines and stop at the first broken link. Each c
 - Never print, echo, or paste a Flowlines API key. Reachability checks below work without one, and checks that need one read it from a file the user created.
 - End with `report_outcome` as the last Flowlines tool call, listing what could not be checked.
 
-## Restore Flowlines MCP authentication first
+## Restore the Flowlines MCP connection first
 
-An authentication failure is a prerequisite failure, not an ingestion finding. If a Flowlines MCP tool is blocked by a sign-in prompt or returns an authentication error such as `401`, `unauthorized`, `invalid_token`, or `login required`, you MUST make a bounded best effort to restore authentication before continuing:
+Use this section when authentication is required, the client cannot start the Flowlines MCP server, or generic MCP failures prevent analysis. Keep the original request, namespace, range, and `user_intent`; connection recovery is a prerequisite, not a new analysis.
 
-1. Use the client's dedicated MCP or plugin sign-in/reconnect action first. From a shell, use `codex mcp login flowlines`; in Claude Code, invoke `/mcp`, select `flowlines`, and authenticate. Do not stop to ask which method to try when one of these is available.
-2. If the authentication action returns an authorization URL but does not launch it, open that exact URL with the OS URL opener (`open` on macOS, `xdg-open` on Linux). Do not search for a login page, alter the URL, or paste an authorization URL containing state or codes into chat or the final report.
-3. Ask the user to complete any password, passkey, MFA, or consent step in the browser. Never request credentials or tokens, inspect password fields, enter secrets, complete MFA, or approve permissions on the user's behalf. Do not drive the browser or use computer-use to advance the sign-in, unless the user explicitly asks you to.
-4. After the user completes the flow, retry one low-impact Flowlines call such as `get_workspace`, then resume the diagnosis. If a `403` persists after fresh authentication, ask the user to verify that the signed-in account can access the Flowlines workspace instead of repeating the login loop.
+### Identify the failure before signing in
 
-If one fresh authentication attempt and one verification call still fail, stop retrying. Record the exact non-sensitive error and the actions attempted, explain what the user must do next, and mark Flowlines MCP checks as blocked. When authentication prevents every Flowlines tool call, note that `report_outcome` could not be sent instead of claiming it was.
+- A sign-in prompt or an explicit authentication error such as `401`, `unauthorized`, `invalid_token`, or `login required` is enough to start the bounded sign-in procedure below.
+- For a generic error such as `-32603: Internal error`, make at most one read-only check, such as `get_workspace`. Count a check already made by the calling skill; do not repeat it here or try a sequence of account, organization, and namespace calls. Do not retry writes to diagnose a connection.
+- If the error repeats, check the MCP connection status and local client logs only when the user's environment exposes them. Match the failing connection and current failure time. Do not access Flowlines source code, infrastructure, deployments, or server logs; unresolved service failures go to Flowlines support.
+- Evidence such as `failed to refresh OAuth tokens for server flowlines`, or an OAuth refresh error stating `Failed to parse server response`, supports a fresh sign-in. A missing reconnect prompt or `failureReason=null` does not rule out an authentication problem. An old error, an error for another server, or `-32603` alone is not sufficient evidence.
+- Read only the relevant diagnostic entries and quote the minimum non-sensitive error. Never expose tokens, cookies, authorization URLs, or full logs. If local status and logs are unavailable, say which diagnostic is missing; do not invent an authentication cause. Without authentication evidence, report the observed connection error and continue only the checks that it supports.
+
+### Make one bounded sign-in attempt
+
+1. Use the failing client's dedicated MCP or plugin sign-in/reconnect action first. For a local Codex MCP connection, use `codex mcp login flowlines` only when the shell uses the same host, OS user, and client configuration as the failing connection. In Claude Code, use `/mcp`, select `flowlines`, and authenticate. A local CLI login does not repair a separate hosted connector; use that connector's reconnect action. If the action is not exposed to the agent, give the user the reconnect step in their client and wait for completion.
+2. Before a shell login, check whether the environment supports browser sign-in and access to the client's configured credential store. For an explicit sandbox permission failure, use the client's normal approval mechanism for that command, with the same OS user and client configuration. Do not use `sudo` or another account, disable the sandbox globally, change credential storage settings, or read saved tokens.
+3. If sign-in returns an authorization URL but does not launch it, use an available native URL opener on the user's client host: `open` on macOS, `Start-Process -FilePath` in Windows PowerShell, or `xdg-open` in a Linux desktop session. Pass the exact URL as one safely quoted argument. Do not assume a remote shell, WSL, container, or headless session has access to the user's browser or OAuth callback. When it does not, use the client's supported remote sign-in flow or ask the user to reconnect from their client; do not change callback settings or create a tunnel. Do not search for a login page, alter the URL, or paste an authorization URL containing state or codes into chat or the final report.
+4. Ask the user to complete any password, passkey, MFA, or consent step in the browser. Never request credentials or tokens, inspect password fields, enter secrets, complete MFA, or approve permissions on the user's behalf. Do not drive the browser or use computer-use to advance the sign-in, unless the user explicitly asks you to.
+5. Confirm that the client reports a completed login, including credential storage for a local CLI. A browser callback followed by `failed to write OAuth tokens to keyring` is not a completed login. A locked or unavailable credential store is not necessarily a sandbox permission problem. Allow one additional login attempt only after the reported storage problem is resolved; otherwise stop and give the user the relevant client or OS repair step. For hosted connectors, rely on the client's reported connection status and the read-only verification below; do not inspect local credentials.
+
+### Verify and resume
+
+After the client reports a completed login, retry one read-only Flowlines call such as `get_workspace`. If it succeeds, resume the original request. A successful login alone does not prove MCP tool access is restored.
+
+If the same connection failure persists, use an available native action to reload that MCP connection once, then make one final read-only check. If reload is unavailable or verification still fails, stop. State what the client confirmed and that tool access remains unverified, name the error, and give the client-specific reconnect or restart step. Do not restart the whole app automatically or interrupt other work. A persistent `403` calls for checking account access to the workspace, not another login.
+
+When connection checks remain blocked, record what could not be checked. Do not repeat `report_outcome` after the same connection failure. Do not present unavailable namespace data as empty data.
 
 ## Step 1: what should be arriving
 
