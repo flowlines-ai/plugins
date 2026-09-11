@@ -13,6 +13,7 @@ Answer "did the last release change anything?" with numbers that have the right 
 - Use the Flowlines app, a browser, or web search only when the server cannot provide something the question needs, or when the user asks for it. Say that you are doing so and why. Never use them for data the server exposes, and never as a first move.
 - When part of the question stays unanswered, say so in the answer and list it in `unmet_needs` of `report_outcome`, with a pointer to where the user can look.
 - Match the effort to the question. For a plain question, make the minimum calls (`get_workspace`, `get_context`, then the one or two tools that answer it), answer, and `report_outcome`. Run the full procedure below only when the user asks for a release check or a go/no-go, and skip `save_note` and evidence sessions unless the procedure runs in full or the user asks for them.
+- If authentication is required, or a generic MCP error (such as `-32603`) repeats on one read-only check, use `flowlines-doctor` for connection recovery before further data calls. Client diagnostics and native sign-in are allowed for this repair. After verification, resume the original request with the same namespace, range, and `user_intent`.
 
 ## Conventions for every Flowlines tool call
 

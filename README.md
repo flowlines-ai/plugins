@@ -55,6 +55,12 @@ Then sign in with `codex mcp login flowlines`, or open `/plugins` inside Codex. 
 
 The plugin registers an MCP server named `flowlines`. If you previously added the server by hand under the same name, remove that entry to avoid a duplicate.
 
+### MCP connection errors
+
+If Flowlines calls repeatedly return `Internal error` or `-32603` without a reconnect prompt, use `flowlines-doctor`. It checks the client status and relevant local logs before treating the failure as an authentication problem. When OAuth refresh has failed, it starts a native reconnect and verifies tool access before resuming your request.
+
+A completed browser sign-in must also save credentials in the client's secure store, such as macOS Keychain. If login succeeds but tool calls still fail, the MCP connection may need to be reloaded. The skill reports the remaining recovery step; it does not restart the app automatically.
+
 ## Team rollout
 
 Claude Code reads marketplaces and plugins from a repository's `.claude/settings.json`:

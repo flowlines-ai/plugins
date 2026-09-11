@@ -12,6 +12,7 @@ Go from a symptom to a verifiable cause with the smallest exposure of end-user c
 - The Flowlines MCP server is the only data source for this skill. Do not open the Flowlines app, drive a browser, use computer-use, or search the web to find data, unless the user explicitly asks you to.
 - When the server cannot answer part of the question, say so in the answer and list it in `unmet_needs` of `report_outcome`. If the information lives in the Flowlines app, tell the user where to look; do not go there yourself.
 - Match the effort to the question. For a plain question, make the minimum calls (`get_workspace`, `get_context`, then the one or two tools that answer it), answer, and `report_outcome`. Run the full procedure below only when the user asks for an investigation or evidence for a report, and skip `save_note` and evidence sessions unless the procedure runs in full or the user asks for them.
+- If authentication is required, or a generic MCP error (such as `-32603`) repeats on one read-only check, use `flowlines-doctor` for connection recovery before further data calls. Client diagnostics and native sign-in are allowed for this repair. After verification, resume the original request with the same namespace, range, and `user_intent`.
 
 ## Conventions for every Flowlines tool call
 
