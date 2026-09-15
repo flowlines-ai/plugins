@@ -7,6 +7,11 @@ description: Produce a periodic review of a Flowlines namespace over the Flowlin
 
 Turn the Flowlines MCP tools into one repeatable review with a fixed shape, so successive reviews are comparable and nothing already known is re-derived.
 
+For an MCP-focused review that asks what to change, use `flowlines-improve-mcp`
+when available to inspect saved recommendations. Keep their evidence windows and
+generation dates visible; a saved finding is not necessarily new in this review
+window or still present in the current contract.
+
 ## Tool discipline
 
 - The Flowlines MCP server is the only data source for this skill. Do not open the Flowlines app, drive a browser, use computer-use, or search the web to find data, unless the user explicitly asks you to.

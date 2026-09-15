@@ -6,6 +6,7 @@ Official [Flowlines](https://flowlines.ai) plugins for coding agents. One reposi
 |---|---|
 | `flowlines` MCP server | Connects your agent to your Flowlines workspace at `https://api.flowlines.ai/mcp`. Ask what your agents' users did, what changed since a release, where sessions go wrong, and record findings as notes. |
 | `flowlines-mcp-observability` skill | Instruments an MCP server so its tool calls arrive in Flowlines as canonical MCP telemetry, through AGNTCY Observe or vanilla OpenTelemetry. |
+| `flowlines-improve-mcp` skill | Inspects saved MCP improvement recommendations, checks evidence and sample coverage, and prepares requested repository fixes against the current contract. |
 | `flowlines-agent-observability` skill | Installs, repairs, diagnoses, or removes user-level Flowlines telemetry for Claude Code and Codex CLI sessions on macOS and Linux. |
 | `flowlines-weekly-review` skill | A periodic review over the MCP server: what changed since the last review, signals, outcome movements, and what to pin for next time. |
 | `flowlines-release-check` skill | Before-and-after comparison of an agent release: outcomes, intents, cost, signals, and evidence sessions, with the right denominators. |
@@ -26,7 +27,7 @@ Both skills ask for explicit consent before changing anything, and neither print
 ### ChatGPT and Codex public plugin
 
 The public distribution target is one **Flowlines** plugin with the hosted MCP
-server and four shared analysis skills in OpenAI's Plugins Directory. This
+server and five shared analysis skills in OpenAI's Plugins Directory. This
 repository prepares its submission; merging changes does not publish it or
 install it for users. A public listing and installation reuse across products
 still require review and verification.
@@ -54,6 +55,21 @@ codex plugin marketplace add flowlines-ai/plugins && codex plugin add flowlines@
 Then sign in with `codex mcp login flowlines`, or open `/plugins` inside Codex. Skills are available as `$<skill-name>`, for example `$flowlines-weekly-review` or `$flowlines-doctor`.
 
 The plugin registers an MCP server named `flowlines`. If you previously added the server by hand under the same name, remove that entry to avoid a duplicate.
+
+### Improve an MCP from observed usage
+
+Ask: "What should I change in my MCP based on how agents use it?" The
+`flowlines-improve-mcp` skill reads `list_mcp_recommendations` and
+`get_mcp_recommendation`, checks supporting evidence, and returns a concrete
+suggested change with scope, confidence, coverage, and age. Ask it to prepare a
+fix when the target repository is available. Without repository access, it can
+explain the saved suggestion but cannot verify the current code or apply it.
+
+The hosted MCP server must expose both recommendation tools and have saved
+recommendations for the namespace. The plugin does not register individual
+tools in `.mcp.json`. An empty list does not establish that the MCP has no issues,
+and old findings can remain after a fix. This workflow checks the current contract
+before editing it and does not change the saved recommendation's status.
 
 ### MCP connection errors
 

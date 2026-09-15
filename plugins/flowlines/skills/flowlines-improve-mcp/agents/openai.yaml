@@ -1,0 +1,4 @@
+interface:
+  display_name: "Improve an MCP with Flowlines"
+  short_description: "Turn production evidence into MCP improvements"
+  default_prompt: "Use $flowlines-improve-mcp to inspect recommendations for my MCP and prepare a supported fix in this repository."
