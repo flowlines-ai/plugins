@@ -1,7 +1,7 @@
 # Flowlines in ChatGPT and Codex
 
 The public distribution target is one **Flowlines** plugin with the hosted MCP
-server and four shared analysis skills. Publish it through OpenAI's **With MCP**
+server and five shared analysis skills. Publish it through OpenAI's **With MCP**
 submission flow to the universal Plugins Directory shared by ChatGPT and Codex.
 The production server is `https://api.flowlines.ai/mcp`.
 
@@ -28,6 +28,12 @@ The initial public bundle contains:
 - `flowlines-release-check`
 - `flowlines-investigate-session`
 - `flowlines-cohort-builder`
+- `flowlines-improve-mcp`
+
+The improvement workflow can inspect saved recommendations using hosted tools
+alone. Preparing a repository fix also requires access to the target code in the
+current client. It checks evidence coverage, record age, and the current contract;
+it does not apply or resolve a recommendation through the MCP server.
 
 These skills use hosted tools and shared resources. Repository instrumentation,
 local telemetry setup, and local diagnostics remain available through the
@@ -103,7 +109,7 @@ needs a clean test account or environment without the custom-marketplace plugin.
 | Install Flowlines in ChatGPT web and complete OAuth | Public listing ID, install steps, and successful `get_workspace` / `get_context` calls. |
 | Open ChatGPT desktop Chat/Work, then Codex in the desktop app | Whether Flowlines is already enabled; each additional install or sign-in action required; successful tool calls. |
 | Open a fresh Codex CLI session signed in to the same account | Availability of the same plugin, additional setup required, and successful tool calls. |
-| Select each of the four skills | Correct skill selection, resource access, and expected workflow output from the review cases. |
+| Select each of the five skills | Correct skill selection, resource access, and expected workflow output from the review cases. |
 | Disconnect the service or use an account without access | Sign-in request or access error, with no invented or cross-account data. |
 | Upgrade an existing custom-marketplace user | Any duplicate listing or MCP server, which integration handles calls, and explicit migration steps if needed. |
 

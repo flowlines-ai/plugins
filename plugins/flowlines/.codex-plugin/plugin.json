@@ -1,7 +1,7 @@
 {
   "name": "flowlines",
-  "version": "0.1.0",
-  "description": "Flowlines agent observability: analyse your Flowlines workspace over MCP, instrument MCP servers, and export Claude Code and Codex sessions.",
+  "version": "0.2.0",
+  "description": "Flowlines agent observability: analyse agent usage, inspect MCP improvement recommendations, instrument MCP servers, and export Claude Code and Codex sessions.",
   "author": { "name": "Flowlines", "email": "support@flowlines.ai", "url": "https://flowlines.ai" },
   "homepage": "https://flowlines.ai",
   "repository": "https://github.com/flowlines-ai/plugins",
@@ -12,7 +12,7 @@
   "interface": {
     "displayName": "Flowlines",
     "shortDescription": "Agent observability for MCP servers and coding agents",
-    "longDescription": "Connect to your Flowlines workspace over MCP to review agent activity, compare releases, investigate sessions, and analyse user cohorts. Includes skills to instrument MCP servers, export full-content Claude Code and Codex CLI telemetry, and diagnose missing data.",
+    "longDescription": "Connect to your Flowlines workspace to review agent activity, compare releases, investigate sessions, analyse user cohorts, and inspect MCP improvement recommendations. Use production evidence and suggested contract changes to prepare requested repository fixes. Includes MCP instrumentation, coding-agent telemetry, and ingestion diagnostics.",
     "developerName": "Flowlines",
     "category": "Developer Tools",
     "websiteURL": "https://flowlines.ai",
@@ -21,7 +21,7 @@
     "defaultPrompt": [
       "What changed in my Flowlines namespace this week?",
       "Use $flowlines-mcp-observability to instrument this MCP server.",
-      "Use $flowlines-agent-observability to export my Codex sessions."
+      "Use $flowlines-improve-mcp to inspect recommendations for my MCP and prepare a supported fix."
     ],
     "composerIcon": "./assets/logo.png",
     "logo": "./assets/logo.png"

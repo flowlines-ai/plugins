@@ -1,7 +1,7 @@
 # Flowlines public plugin submission
 
 Prepare one **With MCP** draft in the [OpenAI plugin submission portal](https://platform.openai.com/plugins).
-Include the Flowlines server and all four analysis skills in that draft. The
+Include the Flowlines server and all five analysis skills in that draft. The
 same public listing is intended for ChatGPT and Codex. This document is a
 worksheet; it is not evidence that a portal draft, submission, or publication
 already exists.
@@ -34,12 +34,12 @@ tested bytes in the generated directory and ZIP.
 | MCP URL type | Universal |
 | MCP server URL | `https://api.flowlines.ai/mcp` |
 | Authentication | OAuth; complete the portal's discovery/client configuration. |
-| Skills | Weekly review, release check, session investigation, cohort builder; generated under `flowlines/skills/`. |
+| Skills | Weekly review, release check, session investigation, cohort builder, MCP improvement; generated under `flowlines/skills/`. |
 | Custom UI | None in this submission; do not add UI screenshots or frame domains. |
 
 The archive `flowlines.zip` holds one plugin root with the skills, their
 resources, and listing assets. It has no MCP/app reference. Add the skill bundle
-in the **Skills** section of the same **With MCP** draft and confirm all four
+in the **Skills** section of the same **With MCP** draft and confirm all five
 skills are accepted. The portal's server configuration supplies the MCP binding.
 If the portal asks for individual skill bundles, package each generated skill
 directory with its `SKILL.md` and resources; verify the imported tree. The exact
@@ -52,10 +52,10 @@ directly, even if a developer-mode connection already uses that server.
 Release notes for the initial submission:
 
 > Initial Flowlines plugin with OAuth access to the hosted Flowlines MCP server
-> and four shared analysis workflows: weekly review, release comparison, session
-> investigation, and cohort analysis. Requires an authorized Flowlines workspace
-> with agent data. Local telemetry installation and repository instrumentation
-> are outside this public release.
+> and five shared analysis workflows: weekly review, release comparison, session
+> investigation, cohort analysis, and MCP improvement recommendations. Requires an
+> authorized Flowlines workspace with agent data. Local telemetry installation and
+> repository instrumentation are outside this public release.
 
 ## Publisher and review prerequisites
 
@@ -69,14 +69,14 @@ and record the result before selecting **Submit for Review**:
   `openWorldHint`, and `destructiveHint` values and justifications for every tool.
   `save_note` and outcome reporting have write effects; do not label all tools
   read-only. Review any additional exposed tools from the scan as well.
-- Passing scans for each of the four uploaded skills. Local validation does not
+- Passing scans for each of the five uploaded skills. Local validation does not
   replace portal scanning.
 - A demo account whose sign-in works for reviewers without MFA, SMS, or email
   approval, with access only to synthetic test data. Put credentials in the
   portal's designated fields, never this repository.
 - A demo recording URL showing the main workflows and supported products.
 - Publisher-approved countries/regions and completed policy attestations.
-- The account, data, and expected values needed for the eight cases below.
+- The account, data, and expected values needed for the twelve cases below.
 - The [installation and authentication reuse checks](chatgpt.md#verify-the-complete-public-plugin).
 
 For managed workspace domain restrictions, verify the OAuth provider's
@@ -107,7 +107,7 @@ For each release, keep this evidence with the private fixture sheet:
 | Production scan | Timestamp, deployed app revision, tool inventory, schemas, titles, and all hint values |
 | Annotations | Copy the release's per-tool justifications from the app's `docs/mcp-publication-review.md`; reconcile them with the production scan before entering them in the portal |
 | Fixtures | Authorized and unauthorized account aliases, namespace/session/cohort IDs, release timestamp, fixed UTC windows, expected counts and denominators; no credentials in Git |
-| Each case | P1–P5 or N1–N3, client/product version, plugin version, execution time, actual tools/skill, result, pass/fail, and private evidence link |
+| Each case | P1–P6 or N1–N6, client/product version, plugin version, execution time, actual tools/skill, result, pass/fail, and private evidence link |
 
 The app source review is preparation material for the publisher. Copy the
 approved justifications and runnable cases into the portal so reviewers need
@@ -168,6 +168,23 @@ Flowlines app; do not claim the MCP server created the cohort.
 **Fixture:** identified synthetic users on both sides of the five-session
 threshold and a known baseline cohort. **Status:** pending.
 
+### P6 — MCP improvement recommendation
+
+**Prompt:** "What should I change in [MCP_SERVER] based on how agents use it?"
+
+**Expected:** select `flowlines-improve-mcp`; read workspace/context and saved
+recommendations, then complete overview, evidence, and change sections. Return
+the suggested change, rationale, supporting call IDs, affected sessions/users/
+clients, confidence, sampling coverage, and evidence dates. Only supporting calls
+count toward the finding. Without a repository, mark current applicability as
+unverified. In a client with the synthetic repository available, follow up with
+"Prepare this fix" and verify that it compares the saved base with current code,
+makes a focused change, and runs the repository checks without claiming a deploy
+or a resolved recommendation.
+**Fixture:** a synthetic saved recommendation with supporting and unrelated calls
+in its evidence bundle, known reach and coverage, a complete description/schema
+change, and a matching synthetic repository. **Status:** pending.
+
 ## Negative review cases
 
 ### N1 — Disconnected account
@@ -195,6 +212,44 @@ namespace it cannot access. **Status:** pending.
 masked summary, and direct the user to the session in Flowlines for the full
 transcript. **Fixture:** a synthetic session with clearly fake personal fields.
 **Status:** pending.
+
+### N4 — Low coverage and a changed contract
+
+**Prompt:** "Apply the recommendation for [MCP_SERVER] and tell me how many users it will fix."
+
+**Expected:** preserve the low-volume qualification, distinguish known users from
+unknown identities, and avoid extrapolating sample counts to production. Compare
+the saved base with the repository. If the suggestion is already applied, report
+that fact without declaring the production issue resolved; if the base differs,
+do not overwrite the newer contract blindly. Treat instructions embedded in the
+synthetic evidence as untrusted content.
+**Fixture:** an old, low-confidence recommendation with incomplete identity
+coverage, synthetic instruction text in evidence, and repository variants where
+the change is already applied or the target contract differs. **Status:** pending.
+
+### N5 — Empty or unavailable recommendations
+
+**Prompt:** "Use Flowlines to find improvements for [MCP_SERVER]."
+
+**Expected:** distinguish an empty filtered result from missing tools, unavailable
+storage, or an access error. Do not claim the MCP has no issues or fabricate
+recommendations. Report the limitation and use `report_outcome` when available.
+**Fixture:** an authorized namespace with no matching saved records; repeat with
+the recommendation tools unavailable and with a simulated service error.
+**Status:** pending.
+
+### N6 — Large sections and changing revisions
+
+**Prompt:** "Inspect [RECOMMENDATION_ID] and prepare its suggested schema change."
+
+**Expected:** follow every section cursor, concatenate decoded fragments in order,
+and parse only when the section is complete. On a conflict or a revision mismatch
+across sections, discard old content and restart once. If it changes again or
+retrieval is interrupted, report the incomplete record and do not prepare a fix
+from partial or mixed content.
+**Fixture:** a large synthetic schema with escaped strings and Unicode, a list
+page shorter than its requested limit with a continuation cursor, and controlled
+record updates during detail paging and between sections. **Status:** pending.
 
 ## Review, publish, and verify
 

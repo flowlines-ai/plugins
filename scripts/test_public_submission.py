@@ -60,6 +60,7 @@ class PublicSubmissionTests(unittest.TestCase):
             self.assertEqual({path.name for path in (plugin / "skills").iterdir()}, {
                 "flowlines-weekly-review", "flowlines-release-check",
                 "flowlines-investigate-session", "flowlines-cohort-builder",
+                "flowlines-improve-mcp",
             })
             for skill in (plugin / "skills").iterdir():
                 validate_skill(skill)
@@ -200,8 +201,8 @@ class PublicSubmissionTests(unittest.TestCase):
             path = ROOT / "docs" / name
             validate_relative_links(ROOT, path, path.read_text())
         worksheet = (ROOT / "docs/openai-submission.md").read_text()
-        self.assertEqual(re.findall(r"^### P(\d+) —", worksheet, re.MULTILINE), list("12345"))
-        self.assertEqual(re.findall(r"^### N(\d+) —", worksheet, re.MULTILINE), list("123"))
+        self.assertEqual(re.findall(r"^### P(\d+) —", worksheet, re.MULTILINE), list("123456"))
+        self.assertEqual(re.findall(r"^### N(\d+) —", worksheet, re.MULTILINE), list("123456"))
 
 
 if __name__ == "__main__":

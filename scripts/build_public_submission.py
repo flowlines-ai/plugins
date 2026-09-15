@@ -19,6 +19,7 @@ ANALYSIS_SKILLS = (
     "flowlines-release-check",
     "flowlines-investigate-session",
     "flowlines-cohort-builder",
+    "flowlines-improve-mcp",
 )
 
 
@@ -45,12 +46,12 @@ def write_submission(output: Path) -> None:
         for key in ("name", "version", "author", "homepage", "repository", "license", "keywords")
     }
     manifest.update({
-        "description": "Review AI agent activity, compare releases, investigate sessions, and analyse user cohorts with Flowlines.",
+        "description": "Review AI agent activity, compare releases, investigate sessions, analyse user cohorts, and inspect MCP improvement recommendations with Flowlines.",
         "skills": "./skills/",
         "interface": {
             "displayName": "Flowlines",
             "shortDescription": "Understand your AI agents",
-            "longDescription": "Connect your Flowlines account to review agent activity, compare outcomes before and after a release, investigate unsuccessful sessions, and analyse user cohorts. Use aggregate metrics and focused session evidence to explain findings. Save verified findings as workspace notes when requested. Requires a Flowlines account with access to a workspace containing agent data.",
+            "longDescription": "Connect your Flowlines account to review agent activity, compare releases, investigate sessions, analyse user cohorts, and inspect MCP improvement recommendations. Check production evidence, sample coverage, and suggested contract changes before preparing a requested repository fix. Save verified findings as workspace notes when requested. Requires a Flowlines account with access to a workspace containing agent data. Repository changes require access to the target code.",
             "developerName": "Flowlines",
             "category": "Developer Tools",
             "capabilities": ["Read", "Write"],
@@ -61,7 +62,7 @@ def write_submission(output: Path) -> None:
             "defaultPrompt": [
                 "What changed in my Flowlines namespace this week?",
                 "Compare agent outcomes before and after my latest release.",
-                "Investigate unsuccessful sessions in my Flowlines workspace.",
+                "What should I change in my MCP based on how agents use it?",
             ],
             "composerIcon": "./assets/logo.png",
             "logo": "./assets/logo.png",
