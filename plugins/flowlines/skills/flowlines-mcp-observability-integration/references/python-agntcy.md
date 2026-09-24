@@ -76,8 +76,8 @@ The integration must also:
 - read the published description from the tool registration when available, trim it, cap it at 10,000 characters, and set `gen_ai.tool.description` on the same MCP span; omit absent or blank descriptions;
 - read the published input schema, and the output schema when declared, from the same registration metadata, serialize each as JSON, and set `gen_ai.tool.input_schema` and `gen_ai.tool.output_schema` on the same MCP span; omit a missing schema or one over 50,000 characters rather than truncating it;
 - add required `reason` and `user_intent` fields to every tool schema;
-- preserve `_meta["session.id"]` as request metadata;
-- resolve a stable user ID for every call, preferring the verified authenticated subject and otherwise requiring `_meta["user.id"]`;
+- give every emitted MCP span, `report_outcome` included, a `session.id`: preserve `_meta["session.id"]` as request metadata when the client sends it, and otherwise set `session.id` and `mcp.session.id` from the MCP transport session on the span; do not assume the instrumentor does this;
+- resolve a stable user ID for every call from the source order in [Mandatory session and user identity](../SKILL.md#mandatory-session-and-user-identity), preferring the verified authenticated subject and otherwise requiring `_meta["user.id"]`; omit it only when that section allows;
 - set exact `user.id`, plus `user.name` and `user.email` when verified or client-supplied values exist, on the emitted MCP span; verified profile values win;
 - register `report_outcome` with the required final-call description and server instruction;
 - set explicit `OK` status for a successful final MCP result and `ERROR` for a tool or protocol failure; do not accept a completed span left at `UNSET`;
@@ -88,7 +88,7 @@ The integration must also:
 
 Do not assume the instrumentor exports tool descriptions or schemas. Check a completed span against the registered description and JSON Schema. When needed, set `gen_ai.tool.description`, `gen_ai.tool.input_schema`, and `gen_ai.tool.output_schema` at the existing central execution boundary on the actual AGNTCY MCP span. These optional fields must not cause duplicate spans or a second provider; if they cannot be attached, report that descriptions and contracts will remain unavailable.
 
-Do not assume that a successful import proves the installed MCP version produces the needed attributes. In particular, do not assume AGNTCY promotes user name/email from MCP `_meta`. Use the target server's central execution/authentication boundary to set `user.id`, `user.name`, and `user.email` on the actual AGNTCY MCP span. If the instrumentor does not expose an active span or a required field at that boundary, fall back to the vanilla wrapper at MCP-level `tools/call` middleware or the shared dispatcher, prefer middleware when the framework has it, and disable overlapping Flowlines MCP coverage so the call is not duplicated.
+Do not assume that a successful import proves the installed MCP version produces the needed attributes. In particular, do not assume AGNTCY promotes user name/email from MCP `_meta`. Use the target server's central execution/authentication boundary to set `session.id` (when the client sends none), `user.id`, `user.name`, and `user.email` on the actual AGNTCY MCP span. If the instrumentor does not expose an active span or a required field at that boundary, fall back to the vanilla wrapper at MCP-level `tools/call` middleware or the shared dispatcher, prefer middleware when the framework has it, and disable overlapping Flowlines MCP coverage so the call is not duplicated.
 
 Add or adapt tests to exercise one complete tool call and inspect exported spans. Confirm Flowlines-recognized AGNTCY attributes identify:
 
@@ -98,7 +98,8 @@ Add or adapt tests to exercise one complete tool call and inspect exported spans
 - reason and user intent;
 - server identity;
 - unique invocation and request correlation;
-- explicit session identity and a non-empty stable `user.id`;
+- `session.id` on every span, `report_outcome` included, for both the client-metadata path and the transport fallback;
+- a non-empty stable `user.id`, unless no identity source exists;
 - exact `user.name` and `user.email` when verified profile or client analytics values are available;
 - explicit `OK` or `ERROR` span status, with no completed call left at `UNSET`;
 - validated arguments and final client-visible result.

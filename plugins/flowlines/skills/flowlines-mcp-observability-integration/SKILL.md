@@ -27,10 +27,33 @@ Read the repository instructions, architecture documentation, and testing strate
 - the central tool-registration or dispatch boundary;
 - existing MCP-level middleware or interceptors;
 - existing OpenTelemetry provider, exporter, collector, propagation, and shutdown handling;
-- where validated arguments, request ID, request `_meta`, authenticated user ID/profile, final MCP result, and error mapping are available;
+- where validated arguments, request ID, request `_meta`, the MCP transport session ID, authenticated user ID/profile, final MCP result, and error mapping are available;
 - how deployment secrets and environment variables are declared without values.
 
 Preserve the target's package manager and telemetry ownership. Reuse an existing tracer provider and collector when present; never register a competing global provider or replace unrelated exporters.
+
+## Mandatory session and user identity
+
+Every emitted MCP span, `report_outcome` included, must carry `session.id`. There is no exception. Every span must also carry `user.id`, unless there is truly no way to identify the user. Find both sources while you inspect the target, before you write span code. An integration that does not send them is not complete.
+
+Without `session.id`, Flowlines cannot put the call in a session: there is no session intent or outcome, `report_outcome` links to nothing, tool loops are not detected, and every call raises a `missing_session_identity` quality issue. Without `user.id`, no call is attributed to a user, so user lists, new-user signals, cohorts, and per-user activity stay empty for this server.
+
+Resolve `session.id` from the first available source:
+
+1. Client `_meta["session.id"]`: the conversation ID that the host or agent supplies.
+2. When the operator controls the MCP client, for example its own agent, change the client to send `_meta["session.id"]` instead of using a fallback.
+3. The MCP transport session: the `Mcp-Session-Id` of a Streamable HTTP session or, on stdio, one fresh ID generated when the connection starts. Flowlines does not read `mcp.session.id` as a session, so emit this value as `session.id`, and also as `mcp.session.id` so its source stays visible.
+4. If the server runs stateless HTTP without MCP session IDs, enable session IDs on the transport. If the deployment cannot support that, stop and ask the user. Do not ship the integration without `session.id`.
+
+A transport session is not always one conversation: a long-lived connection can hold several conversations, and a reconnect can split one. Report this limitation when you use source 3. Never derive a session from the user, trace ID, timing, IP address, tool arguments, or a reused JSON-RPC request ID.
+
+Resolve `user.id` from the first available source:
+
+1. The verified authenticated subject: the OAuth `sub`, the signed-in user, or the user who owns the API key. If the server authenticates requests at all, a stable user ID exists; trace it from the authentication layer to the tool-call boundary. When authentication identifies only a shared account, use the account ID and say so in the hand-off.
+2. Client `_meta["user.id"]`, as an untrusted analytics value.
+3. When the operator controls the MCP client, change the client to send `_meta["user.id"]`.
+
+Omit `user.id` only when all of these are true: the server verifies no caller identity, its clients are third-party hosts that cannot be changed to send `_meta["user.id"]`, and the user confirms that adding authentication or client metadata is out of scope. Then emit no `user.id`, and report the missing identity and its consequences in the hand-off. Never fill `user.id` with an email address, display name, session ID, trace ID, IP address, OAuth client ID, or generated ID.
 
 ## Choose the integration path
 
@@ -49,10 +72,10 @@ Make the smallest coherent change that satisfies all of these invariants:
 2. Register `report_outcome` exactly as described in the contract and include its unconditional final-call instruction in the server instructions.
 3. Start one server span around each complete, validated `tools/call` execution. Give every invocation a fresh tool-call ID that is independent of the JSON-RPC request ID.
 4. Record the canonical attributes from `contract.md`, the validated tool-argument object, and only the final MCP result returned to the client. When the tool has a published description, emit it as `gen_ai.tool.description` from the registration metadata, trimmed and capped at 10,000 characters. Omit missing descriptions; do not infer them from arguments or reasons. Emit the tool's published input schema as `gen_ai.tool.input_schema`, and its output schema when declared as `gen_ai.tool.output_schema`, serialized whole from the same registration metadata; omit a schema that is missing or would exceed 50,000 characters.
-5. Put a non-empty, stable user identifier on every emitted MCP span as the exact `user.id` attribute. Prefer a verified authenticated subject; otherwise require client `_meta["user.id"]`. Never substitute email, display name, session ID, trace ID, or OAuth client ID. If neither identity source exists, the integration is incomplete: extend the authentication or client metadata contract rather than inventing an identity.
+5. Put a non-empty, stable user identifier on every emitted MCP span as the exact `user.id` attribute, from the source order in **Mandatory session and user identity**, which also defines the only case where it may be omitted. Verified identity wins over client metadata.
 6. When verified profile name/email exists, emit it on the same span as exact `user.name` and `user.email` attributes. Otherwise promote non-empty client metadata as untrusted analytics values and document that provenance. Verified fields always win. Flowlines does not map name or email merely because they remain nested in MCP `_meta`; treat them as PII and never put them in captured tool arguments.
 7. Configure and verify the applicable Flowlines identity mapping with user ID attribute `user.id`, name field ID `name` mapped to `user.name`, and email field ID `email` mapped to `user.email`. Use the caller-agent users mapping when a real caller agent is present, or the equivalent namespace identifier mapping for an agentless MCP session. Never label the MCP server as a caller agent. Sending the attributes alone is not sufficient for name/email profile enrichment when identity fields have not been mapped; if neither mapping surface is available, report that limitation explicitly.
-8. Prefer client-supplied `_meta["session.id"]`. Never derive a conversation from user identity, trace ID, timing, or a reused protocol request ID.
+8. Put a non-empty `session.id` on every emitted MCP span, `report_outcome` included, from the source order in **Mandatory session and user identity**.
 9. Propagate valid incoming W3C trace context when the transport exposes it. Do not make trace context a prerequisite for a call to be recorded.
 10. Mark every completed call explicitly: set span status to `OK` after a successful final MCP result and `ERROR` for a tool or protocol failure. Do not leave a completed call at the OpenTelemetry default `UNSET`, because Flowlines reports that call's success as unknown. On failure, record only a bounded error type; do not record raw exceptions, stack traces, authorization headers, OAuth claims, request `_meta`, environment variables, or secret-bearing diagnostics.
 11. Keep telemetry fail-open. Export failure must not change the MCP response, and shutdown flushing must be bounded.
@@ -64,7 +87,9 @@ Do not change sampling for an application-wide provider without explicit approva
 
 Add tests at the middleware or wrapper boundary, using the stack's in-memory exporter when available. At minimum cover:
 
-- a successful call with explicit `OK` span status, required attributes, distinct call/request IDs, session identity, stable `user.id`, arguments, and result;
+- a successful call with explicit `OK` span status, required attributes, distinct call/request IDs, stable `user.id`, arguments, and result;
+- `session.id` on every span, `report_outcome` included, from `_meta["session.id"]` when present and from the transport session otherwise;
+- when `user.id` is omitted under the rule above, no substitute or generated `user.id` on any span;
 - the registered tool description as `gen_ai.tool.description`, with trimming and the 10,000-character bound, plus omission when no description exists;
 - the registered input and output schemas as `gen_ai.tool.input_schema` and `gen_ai.tool.output_schema`, serialized whole and identical to what `tools/list` publishes, plus omission when absent or over the 50,000-character bound;
 - exact `user.name` and `user.email` span attributes for both the verified-profile path and the client-metadata fallback when those values are available;
@@ -75,7 +100,7 @@ Add tests at the middleware or wrapper boundary, using the stack's in-memory exp
 
 Run the target repository's narrow tests, formatter/linter, type checker, and package-manager checks. Never put a real API key in a test.
 
-Only perform live verification when the user has authorized network export and configured the key outside chat. Make ten harmless calls sharing a test `session.id` and stable test `user.id`, include a test name/email when those fields are supported, then make one final `report_outcome` call. Confirm Flowlines shows eleven accepted calls, reports successful calls as successful rather than unknown, maps all calls to the expected user ID, displays the mapped name/email, and shows the session intent, outcome, captured evidence, client attribution when supplied, and no persistent ingestion-quality issues. Behavioral clustering and tool-loop signals have separate volume and timing thresholds, so do not treat their immediate absence as exporter failure.
+Only perform live verification when the user has authorized network export and configured the key outside chat. Make ten harmless calls sharing a test `session.id` and stable test `user.id`, include a test name/email when those fields are supported, then make one final `report_outcome` call in the same session. Confirm Flowlines shows eleven accepted calls in one session with no `missing_session_identity` issue, reports successful calls as successful rather than unknown, maps all calls to the expected user ID, displays the mapped name/email, and shows the session intent, outcome, captured evidence, client attribution when supplied, and no persistent ingestion-quality issues. When `user.id` is omitted under the rule above, skip the user and name/email checks and say so. Behavioral clustering and tool-loop signals have separate volume and timing thresholds, so do not treat their immediate absence as exporter failure.
 
 Verifying receipt and the identity mapping needs the Flowlines MCP server signed in. If authentication is required, or a generic MCP error (such as `-32603`) repeats on one read-only check, use `flowlines-doctor` for connection recovery. Client diagnostics and native sign-in are allowed for this repair; resume receipt verification after tool access is restored.
 
@@ -87,7 +112,8 @@ Report:
 
 - files and dependencies changed;
 - where deployment must set the endpoint, API-key header, and service name;
-- the source of `user.id`, availability of name/email, and the exact Flowlines user mappings verified;
+- the source of `session.id` (client metadata or transport fallback) and of `user.id`, or why `user.id` is absent and what the user confirmed;
+- availability of name/email, and the exact Flowlines user mappings verified;
 - schema or client compatibility changes caused by `reason`, `user_intent`, or `report_outcome`;
 - checks run and whether live Flowlines receipt was verified;
 - any identity, propagation, sampling, payload, or shutdown limitation that remains.

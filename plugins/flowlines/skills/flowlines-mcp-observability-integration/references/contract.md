@@ -52,7 +52,7 @@ Clients attach analytics identity to request metadata, outside tool arguments:
 
 `session.id` and the client-supplied user fields are analytics metadata, not authentication claims. Never authorize from them. If the server already authenticated the request, emit its verified subject as `user.id`, use the corresponding trusted profile for name/email, and ignore caller-supplied spoofed values. Do not copy `_meta` into captured arguments.
 
-This skill requires a non-empty `user.id` for every emitted MCP span. Use a stable, immutable application user ID that identifies the same person across sessions. Do not use an email address, display name, session ID, trace ID, or OAuth client application ID as the user ID. If the server cannot authenticate the end user, require the MCP client to provide `_meta["user.id"]`; if neither source exists, report the integration as incomplete instead of manufacturing an ID.
+This skill requires a non-empty `user.id` for every emitted MCP span, unless there is truly no way to identify the user. Use a stable, immutable application user ID that identifies the same person across sessions. Do not use an email address, display name, session ID, trace ID, IP address, or OAuth client application ID as the user ID. If the server cannot authenticate the end user, require the MCP client to provide `_meta["user.id"]`. Omit `user.id` only under the conditions in [Mandatory session and user identity](../SKILL.md#mandatory-session-and-user-identity), and never manufacture an ID.
 
 When available from a verified authenticated profile, promote name and email to top-level span attributes `user.name` and `user.email`. Otherwise promote non-empty client metadata as untrusted analytics values, never as authorization claims. Verified values always win. Do not rely on their presence inside `_meta`: Flowlines' MCP canonicalizer reads `user.id` from MCP metadata as a compatibility path, but user name/email must exist as span attributes to participate in identity mapping.
 
@@ -77,8 +77,9 @@ Set these attributes:
 | `mcp.server.name` | required | stable logical server name; do not rely on `service.name` |
 | `gen_ai.tool.call.id` | required | fresh unique ID for this invocation |
 | `mcp.request.id` | recommended | JSON-RPC request ID as a string |
-| `session.id` | required for session association | non-empty client `_meta["session.id"]` |
-| `user.id` | required by this integration | stable verified user ID, otherwise required non-empty `_meta["user.id"]` promoted to the span |
+| `session.id` | required on every span, `report_outcome` included | non-empty client `_meta["session.id"]`, otherwise the MCP transport session ID |
+| `mcp.session.id` | recommended | MCP transport session ID, when one exists |
+| `user.id` | required unless no identity source exists | stable verified user ID, otherwise non-empty `_meta["user.id"]` promoted to the span |
 | `user.name` | required when available | verified display name, otherwise client-supplied analytics value, promoted to the span |
 | `user.email` | required when available | verified email, otherwise client-supplied analytics value, promoted to the span |
 
@@ -149,9 +150,11 @@ The namespace source configuration requires the `ingestion.identifiers` nesting 
 
 ## Session identity
 
-Use an explicit client-supplied conversation identity whenever possible. Do not fall back to trace ID, authenticated user, OAuth client ID, a time window, or tool arguments.
+`session.id` is mandatory on every emitted MCP span, `report_outcome` included. Flowlines builds sessions only from calls that carry it. A call without it belongs to no session: it has no session intent or outcome, cannot link to `report_outcome`, is excluded from tool-loop detection, and raises the `missing_session_identity` quality issue.
 
-An MCP transport session is not necessarily a conversation: reconnects may split one conversation and connection reuse may merge several. A server may expose its transport identity separately as `mcp.session.id`, but must not silently present it as a reliable conversation. If the product explicitly accepts a provisional transport fallback, label its source, reliability, and definition so downstream users can distinguish it.
+Use the client's conversation ID from `_meta["session.id"]` first. Otherwise use the MCP transport session: the Streamable HTTP `Mcp-Session-Id`, or one ID generated per stdio connection. Flowlines reads `session.id` and ignores `mcp.session.id` for session grouping, so put the transport value in `session.id`, and also in `mcp.session.id` so its source stays visible. The full source order is in [Mandatory session and user identity](../SKILL.md#mandatory-session-and-user-identity).
+
+An MCP transport session is not necessarily a conversation: reconnects may split one conversation and connection reuse may merge several. Report this limitation when the transport fallback is used. Never derive a session from the authenticated user, trace ID, OAuth client ID, IP address, a time window, tool arguments, or a reused JSON-RPC request ID.
 
 ## Payload and error boundary
 
@@ -194,8 +197,8 @@ After local in-memory span tests pass and live export is explicitly authorized:
 
 1. Make ten ordinary test calls carrying `reason`, `user_intent`, one stable test `session.id`, and one stable test `user.id`; include `user.name` and `user.email` when available.
 2. Make one final `report_outcome` call in the same session.
-3. Confirm Flowlines ingestion health shows eleven matched and accepted calls with no persistent pending calls.
+3. Confirm Flowlines ingestion health shows eleven matched and accepted calls with no persistent pending calls, all in one session and with no `missing_session_identity` issue.
 4. Confirm tool name, published description when available, server, explicit successful status rather than unknown status, latency, session intent, captured evidence, and reported outcome.
-5. Confirm every call and the session map to the exact test user ID, and confirm the user profile displays the mapped name/email rather than falling back to the raw ID.
+5. Confirm every call and the session map to the exact test user ID, and confirm the user profile displays the mapped name/email rather than falling back to the raw ID. Skip this step only when `user.id` is omitted under the no-identity rule, and report that.
 6. Treat clustering as eligible only after at least 20 valid-reason calls and three distinct normalized reasons.
 7. Tool-loop detection requires three adjacent calls to the same server/tool/reason in one metadata session within ten minutes.
