@@ -80,6 +80,8 @@ def validate_mcp_observability_contract(skill_dir: Path) -> None:
     for attribute in ("`user.id`", "`user.name`", "`user.email`"):
         if attribute not in markdown:
             fail(f"SKILL.md must require the exact {attribute} identity attribute")
+    if "## End-user name and email" not in markdown:
+        fail("SKILL.md must keep the End-user name and email source order")
     for phrase in ("MCP-level middleware", "AddReceivingMiddleware", "on_call_tool"):
         if phrase not in markdown:
             fail(f"SKILL.md must prefer MCP middleware boundary: missing {phrase!r}")
@@ -109,19 +111,8 @@ def validate_mcp_observability_contract(skill_dir: Path) -> None:
             if status not in text:
                 fail(f"{name} must define explicit completed-call status: missing {status}")
 
-    for mapping_fragment in (
-        '"userIdAttribute": "user.id"',
-        '"fieldId": "name"',
-        '"attributeKey": "user.name"',
-        '"fieldId": "email"',
-        '"attributeKey": "user.email"',
-        '"sessionId": "session.id"',
-        '"userId": "user.id"',
-        '"user.name": "user.name"',
-        '"user.email": "user.email"',
-    ):
-        if mapping_fragment not in contract:
-            fail(f"contract.md is missing Flowlines identity mapping: {mapping_fragment}")
+    if "needs an identity mapping" not in contract:
+        fail("contract.md must state that canonical MCP identity attributes need no mapping")
 
 
 def main() -> None:

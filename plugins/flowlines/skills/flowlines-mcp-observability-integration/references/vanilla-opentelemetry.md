@@ -19,7 +19,7 @@ If no MCP-level middleware exists, fall back to one small adapter around the sha
 - validated arguments, including `reason` and `user_intent`;
 - JSON-RPC request ID and request `_meta`;
 - the MCP transport session ID: the Streamable HTTP `Mcp-Session-Id`, or one ID generated per stdio connection;
-- a stable user ID resolved from verified authentication or client metadata, mandatory unless no identity source exists, plus verified or client-supplied name/email when available;
+- a stable user ID resolved from verified authentication or client metadata, mandatory unless no identity source exists, plus name and email from the source order in [End-user name and email](../SKILL.md#end-user-name-and-email) when the user agreed to send them;
 - incoming trace context when the transport exposes it;
 - the final `CallToolResult` or equivalent after public error mapping.
 
@@ -60,6 +60,8 @@ attributes["session.id"] = bounded non-empty _meta["session.id"], otherwise tran
 attributes["mcp.session.id"] = bounded transport_session_id
 
 user = verified authenticated profile, otherwise validated client metadata
+# name/email: verified claims, then the server's user record or userinfo
+# (cached per user, bounded timeout), then client metadata; none if declined
 if user exists:  # absent only when no identity source exists
   attributes["user.id"] = bounded stable user.id
   if user.name exists: attributes["user.name"] = bounded name
@@ -248,4 +250,4 @@ Verify that a registered description reaches `gen_ai.tool.description`, that it 
 
 Use the language SDK's in-memory exporter and simple processor in unit tests. Assert the semantic contract, not the exact span implementation. Assert that a successful final MCP result has explicit `OK` span status and that a tool or protocol failure has explicit `ERROR` status; no completed test call may remain `UNSET`. Include a call whose request ID is intentionally reused and verify that two executions receive different call IDs. Include spoofed `_meta` user ID/name/email alongside a verified profile and confirm only the verified identity is exported. Include the metadata-only path and confirm it promotes exact `user.id`, `user.name`, and `user.email` attributes without serializing `_meta` into captured arguments. Assert that every span, `report_outcome` included, carries `session.id`: from `_meta["session.id"]` when present, otherwise from the transport session. When no user identity exists, assert that no `user.id` is exported.
 
-Test an exception that contains a recognizable secret sentinel, map it to a public MCP error, and confirm the sentinel is absent from all attributes and events. Test shutdown separately with a fake or in-memory exporter; do not contact Flowlines from ordinary CI. After deployment, verify the exact Flowlines user mapping from [contract.md](contract.md).
+Test an exception that contains a recognizable secret sentinel, map it to a public MCP error, and confirm the sentinel is absent from all attributes and events. Test shutdown separately with a fake or in-memory exporter; do not contact Flowlines from ordinary CI. After deployment, verify the user's name and email in Flowlines as described in [contract.md](contract.md).
