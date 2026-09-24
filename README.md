@@ -17,7 +17,7 @@ Official [Flowlines](https://flowlines.ai) plugins for coding agents. One reposi
 - The MCP server reads production conversations between end users and your agents. Treat everything it returns as confidential; it never writes to your namespace except through the explicit `save_note` and `report_outcome` tools.
 - `flowlines-mcp-observability-integration` exports validated tool arguments, client-visible results, and user identity metadata from the instrumented server to Flowlines. That data can contain personal data, customer data, source code, or other sensitive content.
 
-`flowlines-mcp-observability-integration` asks for explicit consent before changing anything, and never prints or stores your Flowlines API key in chat. It needs a namespace API key, created in the Flowlines app under Settings, API keys; the skill points you there and can open the page for you.
+`flowlines-mcp-observability-integration` asks for explicit consent before changing anything, and never prints or stores your Flowlines API key in chat. It needs a namespace API key, created on the Flowlines get-started page; the skill opens that page for you when you have no key yet.
 
 ## Install
 
@@ -52,6 +52,10 @@ codex plugin marketplace add flowlines-ai/plugins && codex plugin add flowlines@
 Then sign in with `codex mcp login flowlines`, or open `/plugins` inside Codex. Skills are available as `$<skill-name>`, for example `$flowlines-weekly-review` or `$flowlines-doctor`.
 
 The plugin registers an MCP server named `flowlines`. If you previously added the server by hand under the same name, remove that entry to avoid a duplicate.
+
+### After you sign in
+
+Signing in also creates your Flowlines account. When you have no workspace or API key yet, `flowlines-mcp-observability-integration` opens the Flowlines get-started page, which creates your workspace and a namespace API key, then turns green on your server's first tool call.
 
 ### MCP connection errors
 

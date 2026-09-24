@@ -1,7 +1,7 @@
 {
   "name": "flowlines",
   "displayName": "Flowlines",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Flowlines agent observability: analyse your Flowlines workspace over MCP and instrument MCP servers.",
   "author": { "name": "Flowlines", "email": "support@flowlines.ai", "url": "https://flowlines.ai" },
   "homepage": "https://flowlines.ai",
