@@ -193,7 +193,7 @@ Include the final-call rule in the MCP server instructions as well as the tool d
 
 ## End-to-end acceptance
 
-After local in-memory span tests pass and live export is explicitly authorized:
+After local in-memory span tests pass, the user has deployed the integration, and live export is explicitly authorized (see **Confirm in Flowlines** in [SKILL.md](../SKILL.md)):
 
 1. Make ten ordinary test calls carrying `reason`, `user_intent`, one stable test `session.id`, and one stable test `user.id`; include `user.name` and `user.email` when available.
 2. Make one final `report_outcome` call in the same session.

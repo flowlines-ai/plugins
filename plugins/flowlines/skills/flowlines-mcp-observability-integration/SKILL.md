@@ -74,7 +74,7 @@ Make the smallest coherent change that satisfies all of these invariants:
 4. Record the canonical attributes from `contract.md`, the validated tool-argument object, and only the final MCP result returned to the client. When the tool has a published description, emit it as `gen_ai.tool.description` from the registration metadata, trimmed and capped at 10,000 characters. Omit missing descriptions; do not infer them from arguments or reasons. Emit the tool's published input schema as `gen_ai.tool.input_schema`, and its output schema when declared as `gen_ai.tool.output_schema`, serialized whole from the same registration metadata; omit a schema that is missing or would exceed 50,000 characters.
 5. Put a non-empty, stable user identifier on every emitted MCP span as the exact `user.id` attribute, from the source order in **Mandatory session and user identity**, which also defines the only case where it may be omitted. Verified identity wins over client metadata.
 6. When verified profile name/email exists, emit it on the same span as exact `user.name` and `user.email` attributes. Otherwise promote non-empty client metadata as untrusted analytics values and document that provenance. Verified fields always win. Flowlines does not map name or email merely because they remain nested in MCP `_meta`; treat them as PII and never put them in captured tool arguments.
-7. Configure and verify the applicable Flowlines identity mapping with user ID attribute `user.id`, name field ID `name` mapped to `user.name`, and email field ID `email` mapped to `user.email`. Use the caller-agent users mapping when a real caller agent is present, or the equivalent namespace identifier mapping for an agentless MCP session. Never label the MCP server as a caller agent. Sending the attributes alone is not sufficient for name/email profile enrichment when identity fields have not been mapped; if neither mapping surface is available, report that limitation explicitly.
+7. Specify the applicable Flowlines identity mapping, for the user to save in the Flowlines app and for you to verify after deployment, with user ID attribute `user.id`, name field ID `name` mapped to `user.name`, and email field ID `email` mapped to `user.email`. Use the caller-agent users mapping when a real caller agent is present, or the equivalent namespace identifier mapping for an agentless MCP session. Never label the MCP server as a caller agent. Sending the attributes alone is not sufficient for name/email profile enrichment when identity fields have not been mapped; if neither mapping surface is available, report that limitation explicitly.
 8. Put a non-empty `session.id` on every emitted MCP span, `report_outcome` included, from the source order in **Mandatory session and user identity**.
 9. Propagate valid incoming W3C trace context when the transport exposes it. Do not make trace context a prerequisite for a call to be recorded.
 10. Mark every completed call explicitly: set span status to `OK` after a successful final MCP result and `ERROR` for a tool or protocol failure. Do not leave a completed call at the OpenTelemetry default `UNSET`, because Flowlines reports that call's success as unknown. On failure, record only a bounded error type; do not record raw exceptions, stack traces, authorization headers, OAuth claims, request `_meta`, environment variables, or secret-bearing diagnostics.
@@ -83,7 +83,7 @@ Make the smallest coherent change that satisfies all of these invariants:
 
 Do not change sampling for an application-wide provider without explicit approval. A dedicated MCP provider may use always-on sampling because these spans are product facts; with a shared provider, preserve its policy and call out any risk from unsampled remote parents.
 
-## Verify
+## Verify locally
 
 Add tests at the middleware or wrapper boundary, using the stack's in-memory exporter when available. At minimum cover:
 
@@ -100,20 +100,52 @@ Add tests at the middleware or wrapper boundary, using the stack's in-memory exp
 
 Run the target repository's narrow tests, formatter/linter, type checker, and package-manager checks. Never put a real API key in a test.
 
-Only perform live verification when the user has authorized network export and configured the key outside chat. Make ten harmless calls sharing a test `session.id` and stable test `user.id`, include a test name/email when those fields are supported, then make one final `report_outcome` call in the same session. Confirm Flowlines shows eleven accepted calls in one session with no `missing_session_identity` issue, reports successful calls as successful rather than unknown, maps all calls to the expected user ID, displays the mapped name/email, and shows the session intent, outcome, captured evidence, client attribution when supplied, and no persistent ingestion-quality issues. When `user.id` is omitted under the rule above, skip the user and name/email checks and say so. Behavioral clustering and tool-loop signals have separate volume and timing thresholds, so do not treat their immediate absence as exporter failure.
+## Review the integration
 
-Verifying receipt and the identity mapping needs the Flowlines MCP server signed in. If authentication is required, or a generic MCP error (such as `-32603`) repeats on one read-only check, use `flowlines-doctor` for connection recovery. Client diagnostics and native sign-in are allowed for this repair; resume receipt verification after tool access is restored.
+When the local checks pass, review the complete diff before you hand it off. The review is a gate, not a summary. When the client can start a subagent or reviewer with fresh context, give it the diff, this file, and [references/contract.md](references/contract.md); otherwise reread the diff yourself against them. Check that:
 
-If the connection remains unavailable, name the exact mapping to configure (`user.id` as the user ID, `name` to `user.name`, `email` to `user.email`) and where in the Flowlines app the user can configure and check it, and say that receipt was not verified. Do not open the app, drive a browser, or search the web to verify it yourself unless the user explicitly asks.
+- every numbered invariant in **Implement the contract** and every rule in **Mandatory session and user identity** holds;
+- each `tools/call` produces exactly one Flowlines MCP span, with no duplicate from automatic instrumentation and no span for `initialize`, `tools/list`, or other methods;
+- every ordinary tool schema requires `reason` and `user_intent`, and the server instructions, examples, callers, and tests match;
+- no secret, request `_meta`, authorization material, raw exception, or stack trace reaches a span, a log, a test, or a committed file;
+- telemetry stays fail-open, shutdown flushing is bounded, and the change adds no second global provider and no sampling change;
+- the tests cover every case in **Verify locally** and fail when the behavior they cover is removed.
 
-## Hand off
+Fix each finding, rerun the local checks, and review again until the review finds nothing. Report any finding that you choose not to fix, with the reason, in the hand-off.
 
-Report:
+## Hand off and deploy
+
+Do not deploy the integration yourself. Report:
 
 - files and dependencies changed;
 - where deployment must set the endpoint, API-key header, and service name;
 - the source of `session.id` (client metadata or transport fallback) and of `user.id`, or why `user.id` is absent and what the user confirmed;
-- availability of name/email, and the exact Flowlines user mappings verified;
+- availability of name/email, and the exact Flowlines user mappings to configure;
 - schema or client compatibility changes caused by `reason`, `user_intent`, or `report_outcome`;
-- checks run and whether live Flowlines receipt was verified;
+- checks run, and review findings fixed or left open;
 - any identity, propagation, sampling, payload, or shutdown limitation that remains.
+
+Then ask the user to deploy:
+
+1. Set the endpoint, the API-key header from the deployment's secret manager, and the service name in the deployment environment, plus `OBSERVE_HEADERS` on the AGNTCY path.
+2. Deploy the server, and the updated MCP clients when the change asks clients to send `_meta["session.id"]` or `_meta["user.id"]`.
+3. Save the identity mapping from invariant 7 in the Flowlines app before the first real calls. Existing sessions are not enriched retroactively.
+
+Then offer to use the Flowlines MCP server to confirm that the deployed integration works. Run the check only when the user accepts.
+
+## Confirm in Flowlines
+
+Use the `flowlines` MCP server that this plugin installs. Follow its conventions: pass `reason` and `user_intent` on each call, and end with its own `report_outcome`, not the one you added to the target server.
+
+1. Traffic. After the deployment is live, ask the user to run one short conversation through a real MCP client that uses the server. Alternatively, when the user authorizes it and the deployed server is reachable, make ten harmless calls that share a test `session.id` and test `user.id`, with a test name/email when supported, then one final `report_outcome` call in the same session. Note the time before the first call and the expected user ID.
+2. `get_workspace`: find the namespace that the deployment's API key writes to.
+3. `list_sessions` with `from` set to that time, and `user_id` set to the expected user ID when `user.id` is emitted. Sessions normally appear within minutes. If nothing appears, repeat without `user_id`: a session that appears only then has lost its user identity, and no session at all points at the export path.
+4. `get_session` on the new session: confirm that it holds every call, `report_outcome` included. Calls spread over several sessions mean that `session.id` is not stable.
+5. `get_user_activity` with the expected user ID, and `list_users` (most recently active first by default): confirm that the calls map to that user, and that `identity.name` and `identity.email` show once the mapping is saved. Skip this step only when `user.id` is omitted under the no-identity rule, and say so.
+6. Ingestion health, quality issues such as `missing_session_identity`, and successful versus unknown call status appear on the MCP page of the Flowlines app, not over MCP. Ask the user to read them there.
+
+Report what each step confirmed, what the user read in the app, and what remains unverified. Behavioral clustering and tool-loop signals have separate volume and timing thresholds, so do not treat their immediate absence as exporter failure.
+
+Verifying receipt and the identity mapping needs the Flowlines MCP server signed in. If authentication is required, or a generic MCP error (such as `-32603`) repeats on one read-only check, use `flowlines-doctor` for connection recovery. Client diagnostics and native sign-in are allowed for this repair; resume receipt verification after tool access is restored.
+
+If the connection remains unavailable, name the exact mapping to configure (`user.id` as the user ID, `name` to `user.name`, `email` to `user.email`) and where in the Flowlines app the user can configure and check it, and say that receipt was not verified. Do not open the app, drive a browser, or search the web to verify it yourself unless the user explicitly asks.
