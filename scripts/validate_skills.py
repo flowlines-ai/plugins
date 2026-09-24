@@ -133,7 +133,7 @@ def main() -> None:
 
     for skill_dir in skill_dirs:
         validate_skill(skill_dir)
-        if skill_dir.name == "flowlines-mcp-observability":
+        if skill_dir.name == "flowlines-mcp-observability-integration":
             validate_mcp_observability_contract(skill_dir)
         print(f"Validated {skill_dir.relative_to(ROOT)}")
 

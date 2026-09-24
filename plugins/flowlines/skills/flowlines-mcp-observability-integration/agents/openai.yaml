@@ -1,0 +1,4 @@
+interface:
+  display_name: "Flowlines MCP Observability Integration"
+  short_description: "Add Flowlines telemetry to an MCP server"
+  default_prompt: "Use $flowlines-mcp-observability-integration to instrument this MCP server for Flowlines observability."

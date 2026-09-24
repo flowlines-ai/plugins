@@ -25,19 +25,9 @@ rm -f /secure/path/flowlines-header
 
 An accepted or bad-request status with the key (`2xx` or `400`) means the key authenticates; a `401` or `403` with the key means the key is wrong, revoked, or belongs to another namespace.
 
-## Claude Code and Codex CLI
-
-Installed by the `flowlines-agent-observability` skill.
-
-1. Run its `doctor.sh`. It checks that the Claude settings carry the telemetry variables and the Flowlines header, that the Codex config carries the exporter and hooks, that the three Codex hooks are present, file modes, and the relay. It also reports how many Codex events are pending in the local spool. It does not contact Flowlines.
-2. Conflicting exporters: `doctor.sh` fails when the Claude settings route signals to another collector or the Codex config carries another exporter. Reinstall with `--replace-existing-otel` after the user agrees.
-3. Codex hook trust: open `/hooks` in Codex and trust the Flowlines user hooks. Until then Codex may omit prompt, tool, and assistant content, and `codex exec` sends nothing through the hooks.
-4. Spool: pending events live under the Flowlines state directory in `spool/`. Each hook run sends the newest event first and drains at most five older ones within a two second budget, so a backlog clears over several turns. A spool that never drains means the relay cannot reach the endpoint; use the reachability check above from the same machine.
-5. Arrival: run one harmless prompt in the CLI, then `list_sessions` with `from` set a few minutes back. `from` filters on the session's start time, which is fine for a session you just created. Claude Code sessions and Codex sessions arrive under their own agent names; `list_agents` shows the exact names in this namespace.
-
 ## Instrumented MCP server
 
-Set up by the `flowlines-mcp-observability` skill.
+Set up by the `flowlines-mcp-observability-integration` skill.
 
 1. Deployment variables: `OTEL_EXPORTER_OTLP_ENDPOINT` (the base URL), `OTEL_EXPORTER_OTLP_HEADERS` with the key from a secret, and `OTEL_SERVICE_NAME`. With AGNTCY Observe, `OBSERVE_HEADERS` must mirror the header value. Confirm they are present in the running process's environment, not only in a template.
 2. Emit ten tool calls carrying `reason`, `user_intent`, `session.id`, and a test `user.id`, then one `report_outcome` call.
@@ -79,7 +69,7 @@ Instrumented with the Flowlines SDKs or a plain OpenTelemetry exporter.
 | Analysis stuck | `aggregate_sessions` grouped by `analysis_status` | `received` or `queued_for_analysis` growing, or `analysis_failed` present |
 | Users unidentified | `aggregate_sessions` metric `session_count`, `include_unidentified` true vs false | identified share of sessions (never `user_count`, which excludes empty ids); then `list_agent_attributes` to find the attribute to map |
 | Agent names split | `list_agents` | inconsistent service names |
-| Empty turns | `get_session` on one recent session | untrusted Codex hooks, or capture disabled on the emitter |
+| Empty turns | `get_session` on one recent session | capture disabled on the emitter |
 | Known gaps | `list_notes` | already-pinned ingestion caveats |
 
 Identity mapping itself is configured per agent in the Flowlines app under the agent's mappings (global, users, aggregates); the MCP server cannot change it.

@@ -18,7 +18,8 @@ If no MCP-level middleware exists, fall back to one small adapter around the sha
 - published tool name, description, and input/output JSON Schema from its registration, when available;
 - validated arguments, including `reason` and `user_intent`;
 - JSON-RPC request ID and request `_meta`;
-- a mandatory stable user ID resolved from verified authentication or required client metadata, plus verified or client-supplied name/email when available;
+- the MCP transport session ID: the Streamable HTTP `Mcp-Session-Id`, or one ID generated per stdio connection;
+- a stable user ID resolved from verified authentication or client metadata, mandatory unless no identity source exists, plus verified or client-supplied name/email when available;
 - incoming trace context when the transport exposes it;
 - the final `CallToolResult` or equivalent after public error mapping.
 
@@ -54,13 +55,15 @@ if registered_input_schema exists and JSON(registered_input_schema) is at most 5
 if registered_output_schema exists and JSON(registered_output_schema) is at most 50,000 characters:
   attributes["gen_ai.tool.output_schema"] = JSON(registered_output_schema)
 
-if _meta["session.id"] is a non-empty string:
-  attributes["session.id"] = bounded value
+# mandatory on every span, report_outcome included
+attributes["session.id"] = bounded non-empty _meta["session.id"], otherwise transport_session_id
+attributes["mcp.session.id"] = bounded transport_session_id
 
 user = verified authenticated profile, otherwise validated client metadata
-attributes["user.id"] = bounded stable user.id
-if user.name exists: attributes["user.name"] = bounded name
-if user.email exists: attributes["user.email"] = bounded email
+if user exists:  # absent only when no identity source exists
+  attributes["user.id"] = bounded stable user.id
+  if user.name exists: attributes["user.name"] = bounded name
+  if user.email exists: attributes["user.email"] = bounded email
 
 start SERVER span "execute_tool <tool_name>"
 execute handler and public MCP error mapping
@@ -71,7 +74,7 @@ end span
 
 Exclude `_meta` from the serialized arguments. Generate the call ID independently from the request ID. Reject or omit non-serializable payloads rather than falling back to object inspection that could expose internal state.
 
-Resolve identity before entering the telemetry wrapper. Verified authentication/profile fields always win over client metadata. If the end user cannot be resolved, extend the server/client contract before declaring the integration complete; do not silently substitute an application, session, email, or generated ID. Runtime diagnostics may count a missing identity, but must remain fail-open and must not block the MCP result.
+Resolve the session and the user before entering the telemetry wrapper, from the source order in [Mandatory session and user identity](../SKILL.md#mandatory-session-and-user-identity). Verified authentication/profile fields always win over client metadata. If the end user cannot be resolved, work through every `user.id` source in that section and extend the server/client contract where it allows; pass no user only when that section allows it, and never substitute an application, session, email, or generated ID. Runtime diagnostics may count a missing identity, but must remain fail-open and must not block the MCP result.
 
 ## TypeScript shape
 
@@ -92,6 +95,8 @@ import {
 type ToolRequest = {
   requestId?: string | number;
   _meta?: Record<string, unknown>;
+  /** Streamable HTTP `Mcp-Session-Id`, or one ID generated per stdio connection. */
+  transportSessionId: string;
 };
 
 type ToolExecution<T> = {
@@ -119,7 +124,8 @@ export async function observeTool<T>(input: {
     user_intent: string;
   };
   request: ToolRequest;
-  user: UserIdentity;
+  /** `null` only when no identity source exists; see SKILL.md. */
+  user: UserIdentity | null;
   parentContext?: Context;
   execute: () => Promise<ToolExecution<T>>;
 }): Promise<T> {
@@ -132,8 +138,19 @@ export async function observeTool<T>(input: {
     "mcp.method.name": "tools/call",
     "mcp.server.name": input.serverName,
     "gen_ai.tool.call.id": randomUUID(),
-    "user.id": input.user.id,
   };
+
+  // Mandatory on every span: the client's conversation ID, otherwise the transport session.
+  const transportSessionId = input.request.transportSessionId.slice(0, 500);
+  attributes["session.id"] =
+    metadataString(input.request._meta, "session.id") ?? transportSessionId;
+  attributes["mcp.session.id"] = transportSessionId;
+
+  if (input.user !== null) {
+    attributes["user.id"] = input.user.id;
+    if (input.user.name !== undefined) attributes["user.name"] = input.user.name;
+    if (input.user.email !== undefined) attributes["user.email"] = input.user.email;
+  }
 
   const description = input.toolDescription?.trim();
   if (description) attributes["gen_ai.tool.description"] = description.slice(0, 10_000);
@@ -145,10 +162,6 @@ export async function observeTool<T>(input: {
   if (input.request.requestId !== undefined) {
     attributes["mcp.request.id"] = String(input.request.requestId);
   }
-  const sessionId = metadataString(input.request._meta, "session.id");
-  if (sessionId !== undefined) attributes["session.id"] = sessionId;
-  if (input.user.name !== undefined) attributes["user.name"] = input.user.name;
-  if (input.user.email !== undefined) attributes["user.email"] = input.user.email;
 
   const span = input.tracer.startSpan(
     `execute_tool ${input.toolName}`,
@@ -233,6 +246,6 @@ Use the target package manager, public package entry points, exact-version rules
 
 Verify that a registered description reaches `gen_ai.tool.description`, that it is trimmed and capped at 10,000 characters, and that an absent or blank description omits the attribute. Verify that the registered input and output schemas reach `gen_ai.tool.input_schema` and `gen_ai.tool.output_schema` serialized exactly as `tools/list` publishes them, and that a schema over 50,000 characters or an undeclared output schema omits the attribute.
 
-Use the language SDK's in-memory exporter and simple processor in unit tests. Assert the semantic contract, not the exact span implementation. Assert that a successful final MCP result has explicit `OK` span status and that a tool or protocol failure has explicit `ERROR` status; no completed test call may remain `UNSET`. Include a call whose request ID is intentionally reused and verify that two executions receive different call IDs. Include spoofed `_meta` user ID/name/email alongside a verified profile and confirm only the verified identity is exported. Include the metadata-only path and confirm it promotes exact `user.id`, `user.name`, and `user.email` attributes without serializing `_meta` into captured arguments.
+Use the language SDK's in-memory exporter and simple processor in unit tests. Assert the semantic contract, not the exact span implementation. Assert that a successful final MCP result has explicit `OK` span status and that a tool or protocol failure has explicit `ERROR` status; no completed test call may remain `UNSET`. Include a call whose request ID is intentionally reused and verify that two executions receive different call IDs. Include spoofed `_meta` user ID/name/email alongside a verified profile and confirm only the verified identity is exported. Include the metadata-only path and confirm it promotes exact `user.id`, `user.name`, and `user.email` attributes without serializing `_meta` into captured arguments. Assert that every span, `report_outcome` included, carries `session.id`: from `_meta["session.id"]` when present, otherwise from the transport session. When no user identity exists, assert that no `user.id` is exported.
 
-Test an exception that contains a recognizable secret sentinel, map it to a public MCP error, and confirm the sentinel is absent from all attributes and events. Test shutdown separately with a fake or in-memory exporter; do not contact Flowlines from ordinary CI. During authorized end-to-end verification, save and verify the exact Flowlines user mapping from [contract.md](contract.md).
+Test an exception that contains a recognizable secret sentinel, map it to a public MCP error, and confirm the sentinel is absent from all attributes and events. Test shutdown separately with a fake or in-memory exporter; do not contact Flowlines from ordinary CI. After deployment, verify the exact Flowlines user mapping from [contract.md](contract.md).

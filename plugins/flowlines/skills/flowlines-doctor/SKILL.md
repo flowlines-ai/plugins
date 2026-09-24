@@ -1,6 +1,6 @@
 ---
 name: flowlines-doctor
-description: Diagnose missing or incomplete Flowlines data and failed MCP connections using local checks and the Flowlines MCP server. Covers coding-agent telemetry, instrumented MCP servers, LangSmith and Langfuse connectors, and SDK OTLP. Use when sessions are missing, analysis is stuck, users are unidentified, or MCP calls fail or require sign-in. Do not use to analyse data that is arriving; the Flowlines analysis skills cover that.
+description: Diagnose missing or incomplete Flowlines data and failed MCP connections using local checks and the Flowlines MCP server. Covers instrumented MCP servers, LangSmith and Langfuse connectors, and SDK OTLP. Use when sessions are missing, analysis is stuck, users are unidentified, or MCP calls fail or require sign-in. Do not use to analyse data that is arriving; the Flowlines analysis skills cover that.
 ---
 
 # Flowlines doctor
@@ -15,7 +15,7 @@ Work from the source towards Flowlines and stop at the first broken link. Each c
 
 ## Conventions
 
-- Flowlines MCP tools take `reason` and `user_intent`; keep `user_intent` identical, for example "Find out why Codex sessions stopped appearing in Flowlines".
+- Flowlines MCP tools take `reason` and `user_intent`; keep `user_intent` identical, for example "Find out why MCP server sessions stopped appearing in Flowlines".
 - Never print, echo, or paste a Flowlines API key. Reachability checks below work without one, and checks that need one read it from a file the user created.
 - End with `report_outcome` as the last Flowlines tool call, listing what could not be checked.
 
@@ -61,7 +61,6 @@ Record the expected sources before checking any of them.
 
 Full procedures per source are in [references/checks.md](references/checks.md). In short:
 
-- **Claude Code or Codex telemetry.** Run the `doctor.sh` script installed by the `flowlines-agent-observability` skill; it validates local configuration only. Then run one harmless prompt and look for the session with `list_sessions` filtered to the last few minutes. For Codex, hooks must be trusted in `/hooks` before prompt and tool content arrive, and pending events sit in the local spool.
 - **An instrumented MCP server.** Confirm the OTLP environment variables are set in the deployment, run ten tool calls plus `report_outcome`, then verify arrival over MCP: `list_agents` for the server's service name and `list_sessions` with `from` set a few minutes back. The ingestion health status (five values) is shown only on the MCP page of the Flowlines app, and the MCP server does not expose it or per-tool failure counts; read it there or ask the user to, and say what each status implicates, from the reference. A paused server under Settings, MCP stops derived observability without stopping ingestion.
 - **LangSmith or Langfuse connectors.** Status lives under Settings, Connectors in the app and is not exposed over MCP: `disconnected`, `configured`, `invalidCredentials`, `syncing`, or `paused`, with the last validation and sync times. Read it there or ask the user to; validation and sync are the user's actions. Then verify arrival over MCP across the provider's history window, since imported sessions keep their original dates.
 - **SDK or OTLP applications.** Check that the exporter points at the Flowlines base URL, that `/v1/traces` and `/v1/logs` are reachable from the host, and that the key header is set from a secret.
@@ -73,7 +72,7 @@ When data arrives but looks wrong, these tools locate the problem without openin
 - Analysis stuck: `aggregate_sessions` grouped by `analysis_status` for `24h` and `7d`. A growing `received` or `queued_for_analysis` share, or any `analysis_failed`, is a processing problem, not an ingestion one.
 - Users unidentified: `aggregate_sessions` with metric `session_count`, once with `include_unidentified: true` and once with `false`; the identified share is the second divided by the first. Do not use `user_count` for this, it never counts empty user ids. A low share means identity mapping is incomplete; `list_agent_attributes` shows which attributes arrive so the right one can be mapped in the app.
 - Agents split or misnamed: `list_agents` shows near-duplicate names caused by inconsistent service names.
-- Content missing from sessions: `get_session` on one recent session and confirm the turn tree has user and assistant content. Empty turns on Codex point at untrusted hooks; empty MCP tool payloads point at the instrumented server's capture settings.
+- Content missing from sessions: `get_session` on one recent session and confirm the turn tree has user and assistant content. Empty MCP tool payloads point at the instrumented server's capture settings.
 - Known artifacts: `list_notes` before concluding anything; ingestion gaps are often already pinned.
 
 ## Step 4: report
