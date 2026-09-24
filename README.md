@@ -94,6 +94,18 @@ Codex reads a repository-level marketplace from `.agents/plugins/marketplace.jso
 }
 ```
 
+## Remove the old Claude Code and Codex telemetry
+
+Version 0.2.0 removes the `flowlines-agent-observability` skill. If you used it, its settings stay on your machine and continue to send full prompts, assistant messages, and tool content to Flowlines. The plugin no longer ships its `uninstall.sh`, so remove the settings manually:
+
+1. **Claude Code.** In `~/.claude/settings.json`, delete these keys from `env`: `CLAUDE_CODE_ENABLE_TELEMETRY`, `CLAUDE_CODE_ENHANCED_TELEMETRY_BETA`, `OTEL_LOGS_EXPORTER`, `OTEL_TRACES_EXPORTER`, `OTEL_METRICS_EXPORTER`, `OTEL_EXPORTER_OTLP_PROTOCOL`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_HEADERS`, `OTEL_LOG_USER_PROMPTS`, `OTEL_LOG_ASSISTANT_RESPONSES`, `OTEL_LOG_TOOL_DETAILS`, and `OTEL_LOG_TOOL_CONTENT`.
+2. **Codex CLI.** In `~/.codex/config.toml`, delete `environment`, `log_user_prompt`, and the `exporter` that contains `x-flowlines-api-key` from `[otel]`. Delete `hooks = true` from `[features]` only if you use no other Codex hooks. In `~/.codex/hooks.json`, delete the `UserPromptSubmit`, `PostToolUse`, and `Stop` entries whose command is `"$HOME/.local/lib/flowlines-agent-observability/codex-hook-relay.sh"`.
+3. **Hook relay.** Delete `~/.local/lib/flowlines-agent-observability/`.
+4. **State and backups.** `${XDG_CONFIG_HOME:-~/.config}/flowlines-agent-observability/` holds copies of your original configuration files in `originals/`, a `curl.conf` that contains your API key, and a `spool/` of unsent Codex events that can contain prompt content. If you had your own OpenTelemetry settings before the install, restore them from `originals/`. Then delete the folder.
+5. **API key.** If you used the key only for this telemetry, revoke it in the Flowlines app under Settings, API keys.
+
+Start new Claude Code and Codex sessions to apply the changes.
+
 ## Repository layout
 
 ```
