@@ -78,7 +78,7 @@ The integration must also:
 - add required `reason` and `user_intent` fields to every tool schema;
 - give every emitted MCP span, `report_outcome` included, a `session.id`: preserve `_meta["session.id"]` as request metadata when the client sends it, and otherwise set `session.id` and `mcp.session.id` from the MCP transport session on the span; do not assume the instrumentor does this;
 - resolve a stable user ID for every call from the source order in [Mandatory session and user identity](../SKILL.md#mandatory-session-and-user-identity), preferring the verified authenticated subject and otherwise requiring `_meta["user.id"]`; omit it only when that section allows;
-- set exact `user.id`, plus `user.name` and `user.email` when verified or client-supplied values exist, on the emitted MCP span; verified profile values win;
+- set exact `user.id`, plus `user.name` and `user.email` from the source order in [End-user name and email](../SKILL.md#end-user-name-and-email) when the user agreed to send them, on the emitted MCP span; server-side values win;
 - register `report_outcome` with the required final-call description and server instruction;
 - set explicit `OK` status for a successful final MCP result and `ERROR` for a tool or protocol failure; do not accept a completed span left at `UNSET`;
 - map failures to a safe client-visible MCP error without exporting backend exception content;
@@ -104,6 +104,6 @@ Add or adapt tests to exercise one complete tool call and inspect exported spans
 - explicit `OK` or `ERROR` span status, with no completed call left at `UNSET`;
 - validated arguments and final client-visible result.
 
-Also verify that request metadata, authorization values, and raw exceptions are absent, and that a verified profile overrides spoofed client user fields. Give the user the Flowlines user mapping to save, exactly as described in [contract.md](contract.md). If automatic instrumentation cannot expose a required field or set explicit completed-call status at the server's actual framework boundary, keep Observe for export only if it composes cleanly and add the smallest vanilla OpenTelemetry wrapper at MCP-level `tools/call` middleware or the shared dispatcher described in [vanilla-opentelemetry.md](vanilla-opentelemetry.md). Prefer middleware when the framework has it. Avoid duplicate spans: disable overlapping automatic coverage or make only one layer emit the Flowlines MCP span.
+Also verify that request metadata, authorization values, and raw exceptions are absent, and that a verified profile overrides spoofed client user fields. If automatic instrumentation cannot expose a required field or set explicit completed-call status at the server's actual framework boundary, keep Observe for export only if it composes cleanly and add the smallest vanilla OpenTelemetry wrapper at MCP-level `tools/call` middleware or the shared dispatcher described in [vanilla-opentelemetry.md](vanilla-opentelemetry.md). Prefer middleware when the framework has it. Avoid duplicate spans: disable overlapping automatic coverage or make only one layer emit the Flowlines MCP span.
 
 For a smoke check, importing, instrumenting, and uninstrumenting the installed `mcp` package must complete without error. Full acceptance still requires inspecting a real finished span and, when authorized, confirming receipt in Flowlines.
