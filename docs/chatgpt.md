@@ -29,9 +29,9 @@ The initial public bundle contains:
 - `flowlines-investigate-session`
 - `flowlines-cohort-builder`
 
-These skills use hosted tools and shared resources. Repository instrumentation,
-local telemetry setup, and local diagnostics remain available through the
-existing desktop marketplace. That marketplace and its `.mcp.json` integration
+These skills use hosted tools and shared resources. Repository instrumentation
+and local diagnostics remain available through the existing desktop
+marketplace. That marketplace and its `.mcp.json` integration
 are preserved for existing Claude Code and Codex users.
 
 ## Prepare the public submission

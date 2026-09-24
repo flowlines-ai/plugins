@@ -54,8 +54,7 @@ Release notes for the initial submission:
 > Initial Flowlines plugin with OAuth access to the hosted Flowlines MCP server
 > and four shared analysis workflows: weekly review, release comparison, session
 > investigation, and cohort analysis. Requires an authorized Flowlines workspace
-> with agent data. Local telemetry installation and repository instrumentation
-> are outside this public release.
+> with agent data. Repository instrumentation is outside this public release.
 
 ## Publisher and review prerequisites
 
