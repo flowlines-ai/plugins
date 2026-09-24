@@ -5,7 +5,7 @@ Official [Flowlines](https://flowlines.ai) plugins for coding agents. One reposi
 | Component | What it does |
 |---|---|
 | `flowlines` MCP server | Connects your agent to your Flowlines workspace at `https://api.flowlines.ai/mcp`. Ask what your agents' users did, what changed since a release, where sessions go wrong, and record findings as notes. |
-| `flowlines-mcp-observability` skill | Instruments an MCP server so its tool calls arrive in Flowlines as canonical MCP telemetry, through AGNTCY Observe or vanilla OpenTelemetry. |
+| `flowlines-mcp-observability-integration` skill | Instruments an MCP server so its tool calls arrive in Flowlines as canonical MCP telemetry, through AGNTCY Observe or vanilla OpenTelemetry. |
 | `flowlines-weekly-review` skill | A periodic review over the MCP server: what changed since the last review, signals, outcome movements, and what to pin for next time. |
 | `flowlines-release-check` skill | Before-and-after comparison of an agent release: outcomes, intents, cost, signals, and evidence sessions, with the right denominators. |
 | `flowlines-investigate-session` skill | From a signal, a user, or a complaint to the failing turn, with minimal exposure of end-user content. |
@@ -15,9 +15,9 @@ Official [Flowlines](https://flowlines.ai) plugins for coding agents. One reposi
 ## Privacy notice
 
 - The MCP server reads production conversations between end users and your agents. Treat everything it returns as confidential; it never writes to your namespace except through the explicit `save_note` and `report_outcome` tools.
-- `flowlines-mcp-observability` exports validated tool arguments, client-visible results, and user identity metadata from the instrumented server to Flowlines. That data can contain personal data, customer data, source code, or other sensitive content.
+- `flowlines-mcp-observability-integration` exports validated tool arguments, client-visible results, and user identity metadata from the instrumented server to Flowlines. That data can contain personal data, customer data, source code, or other sensitive content.
 
-`flowlines-mcp-observability` asks for explicit consent before changing anything, and never prints or stores your Flowlines API key in chat. It needs a namespace API key, created in the Flowlines app under Settings, API keys; the skill points you there and can open the page for you.
+`flowlines-mcp-observability-integration` asks for explicit consent before changing anything, and never prints or stores your Flowlines API key in chat. It needs a namespace API key, created in the Flowlines app under Settings, API keys; the skill points you there and can open the page for you.
 
 ## Install
 

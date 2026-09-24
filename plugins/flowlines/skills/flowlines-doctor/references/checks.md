@@ -27,7 +27,7 @@ An accepted or bad-request status with the key (`2xx` or `400`) means the key au
 
 ## Instrumented MCP server
 
-Set up by the `flowlines-mcp-observability` skill.
+Set up by the `flowlines-mcp-observability-integration` skill.
 
 1. Deployment variables: `OTEL_EXPORTER_OTLP_ENDPOINT` (the base URL), `OTEL_EXPORTER_OTLP_HEADERS` with the key from a secret, and `OTEL_SERVICE_NAME`. With AGNTCY Observe, `OBSERVE_HEADERS` must mirror the header value. Confirm they are present in the running process's environment, not only in a template.
 2. Emit ten tool calls carrying `reason`, `user_intent`, `session.id`, and a test `user.id`, then one `report_outcome` call.

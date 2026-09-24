@@ -1,5 +1,5 @@
 ---
-name: flowlines-mcp-observability
+name: flowlines-mcp-observability-integration
 description: Integrate, repair, review, or verify Flowlines observability in an MCP server repository. Use when a server must emit canonical Flowlines MCP tool-call telemetry through AGNTCY Observe or vanilla OpenTelemetry; do not use for Claude Code or Codex CLI telemetry.
 ---
 

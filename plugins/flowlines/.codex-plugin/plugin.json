@@ -20,7 +20,7 @@
     "termsOfServiceURL": "https://flowlines.ai/terms",
     "defaultPrompt": [
       "What changed in my Flowlines namespace this week?",
-      "Use $flowlines-mcp-observability to instrument this MCP server."
+      "Use $flowlines-mcp-observability-integration to instrument this MCP server."
     ],
     "composerIcon": "./assets/logo.png",
     "logo": "./assets/logo.png"
