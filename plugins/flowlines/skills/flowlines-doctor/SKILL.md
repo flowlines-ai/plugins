@@ -10,7 +10,7 @@ Work from the source towards Flowlines and stop at the first broken link. Each c
 ## Tool discipline
 
 - Start with local checks (shell commands on this machine) and the Flowlines MCP server. They answer most questions and every step below is written for them.
-- Some facts live only in the Flowlines app: MCP ingestion health, connector status, the paused-server toggle, identity mappings. When a check needs one of them, read it in the app if a signed-in browser session is available, or ask the user to read it; say which you did. Do not open the app for anything the MCP server exposes, and do not search the web unless a fact is blocking the diagnosis.
+- Some facts live only in the Flowlines app: connector status, the paused-server toggle, identity mappings, and MCP ingestion health when the server does not offer `get_mcp_overview`. When a check needs one of them, read it in the app if a signed-in browser session is available, or ask the user to read it; say which you did. Do not open the app for anything the MCP server exposes, and do not search the web unless a fact is blocking the diagnosis.
 - Match the effort to the question. If the user asks one thing, for example whether sessions arrived in the last hour, make the one or two calls that answer it and stop. Run the full source-by-source procedure only when the user asks for a diagnosis, or when the quick check fails.
 
 ## Conventions
@@ -51,7 +51,7 @@ When connection checks remain blocked, record what could not be checked. Do not 
 
 Ask which sources the namespace expects, or infer them:
 
-- `get_workspace` lists every namespace with its ingestion status; pick the namespace and note whether it has ever received data.
+- `get_workspace` lists every namespace with its ingestion status; pick the namespace and note whether it has ever received data. When an MCP server is expected, `get_mcp_overview` with `range` `30d` adds its call counts and ingestion status; without that tool, read MCP ingestion health in the app.
 - `get_context` returns the activity overview and the agent glossary; `list_agents` shows what has actually been observed. An expected agent that is absent from `list_agents` has never been ingested under that name.
 - `list_sessions` with `from` set to the last hour or day shows whether anything is arriving right now. `from` filters on session start time, not ingestion time, so it suits live sources; imported history keeps its original dates. Sessions normally appear within minutes; analysis follows later.
 
@@ -61,7 +61,7 @@ Record the expected sources before checking any of them.
 
 Full procedures per source are in [references/checks.md](references/checks.md). In short:
 
-- **An instrumented MCP server.** Confirm the OTLP environment variables are set in the deployment, run ten tool calls plus `report_outcome`, then verify arrival over MCP: `list_agents` for the server's service name and `list_sessions` with `from` set a few minutes back. The ingestion health status (five values) is shown only on the MCP page of the Flowlines app, and the MCP server does not expose it or per-tool failure counts; read it there or ask the user to, and say what each status implicates, from the reference. A paused server under Settings, MCP stops derived observability without stopping ingestion.
+- **An instrumented MCP server.** Confirm the OTLP environment variables are set in the deployment, run ten tool calls plus `report_outcome`, then verify arrival over MCP: `list_agents` for the server's service name and `list_sessions` with `from` set a few minutes back. Read the ingestion health status (five values) with `get_mcp_overview` (`range` `30d`); when the server does not offer that tool, read it on the MCP page of the Flowlines app or ask the user to. Say what each status implicates, from the reference. The MCP server does not expose per-tool failure counts. A paused server under Settings, MCP stops derived observability without stopping ingestion.
 - **LangSmith or Langfuse connectors.** Status lives under Settings, Connectors in the app and is not exposed over MCP: `disconnected`, `configured`, `invalidCredentials`, `syncing`, or `paused`, with the last validation and sync times. Read it there or ask the user to; validation and sync are the user's actions. Then verify arrival over MCP across the provider's history window, since imported sessions keep their original dates.
 - **SDK or OTLP applications.** Check that the exporter points at the Flowlines base URL, that `/v1/traces` and `/v1/logs` are reachable from the host, and that the key header is set from a secret.
 

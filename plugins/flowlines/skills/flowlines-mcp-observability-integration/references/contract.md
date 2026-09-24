@@ -160,7 +160,7 @@ After local in-memory span tests pass, the user has deployed the integration, an
 
 1. Make ten ordinary test calls carrying `reason`, `user_intent`, one stable test `session.id`, and one stable test `user.id`; include `user.name` and `user.email` when available.
 2. Make one final `report_outcome` call in the same session.
-3. Confirm Flowlines ingestion health shows eleven matched and accepted calls with no persistent pending calls, all in one session and with no `missing_session_identity` issue.
+3. Confirm Flowlines ingestion health (`get_mcp_overview`, or the MCP page of the app) shows eleven matched and accepted calls with no persistent pending calls, all in one session and with no `missing_session_identity` issue.
 4. Confirm tool name, published description when available, server, explicit successful status rather than unknown status, latency, session intent, captured evidence, and reported outcome.
 5. Confirm every call and the session map to the exact test user ID, and when name and email are sent, confirm the user profile displays them rather than falling back to the raw ID. Skip this step only when `user.id` is omitted under the no-identity rule, and report that.
 6. Treat clustering as eligible only after at least 20 valid-reason calls and three distinct normalized reasons.
