@@ -82,6 +82,8 @@ def validate_mcp_observability_contract(skill_dir: Path) -> None:
             fail(f"SKILL.md must require the exact {attribute} identity attribute")
     if "## End-user name and email" not in markdown:
         fail("SKILL.md must keep the End-user name and email source order")
+    if "## Published servers" not in markdown:
+        fail("SKILL.md must keep the backward-compatible rollout for published servers")
     for phrase in ("MCP-level middleware", "AddReceivingMiddleware", "on_call_tool"):
         if phrase not in markdown:
             fail(f"SKILL.md must prefer MCP middleware boundary: missing {phrase!r}")

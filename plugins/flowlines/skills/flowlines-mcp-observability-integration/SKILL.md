@@ -29,7 +29,8 @@ Read the repository instructions, architecture documentation, and testing strate
 - existing MCP-level middleware or interceptors;
 - existing OpenTelemetry provider, exporter, collector, propagation, and shutdown handling;
 - where validated arguments, request ID, request `_meta`, the MCP transport session ID, authenticated user ID/profile, final MCP result, and error mapping are available;
-- how deployment secrets and environment variables are declared without values.
+- how deployment secrets and environment variables are declared without values;
+- whether clients that are not deployed together with the server already call it (see **Published servers**).
 
 Preserve the target's package manager and telemetry ownership. Reuse an existing tracer provider and collector when present; never register a competing global provider or replace unrelated exporters.
 
@@ -78,11 +79,27 @@ Cache the results of sources 2 and 3 per user, with a bounded size and expiry, s
 
 If the stack has neither supported AGNTCY instrumentation nor a usable OpenTelemetry SDK, explain the gap instead of inventing an unverified exporter or protocol adapter.
 
+## Published servers
+
+Required `reason` and `user_intent` fields break every client that still uses the previous tool schema: the server rejects each call that omits them. Directories keep the previous schema after a deployment. For example, the ChatGPT directory scans a published server once a day, and existing tools keep their approved metadata until an update passes its checks or review; new tools stay unavailable until approved ([OpenAI submission guide](https://developers.openai.com/plugins/deploy/submission)). Clients that read `tools/list` only when they connect also keep the previous schema in sessions opened before the deployment.
+
+Ask the user whether clients that are not deployed together with the server already call it: a listing in a directory or marketplace (ChatGPT, Claude, or others), or MCP hosts that users configured themselves. When the answer is yes or unknown, the change must not break them:
+
+1. Add `reason` and `user_intent` to every ordinary tool schema as optional string properties, and do not add them to `required`. Their descriptions tell the agent to send them on every call. The server must accept a call without them.
+2. Do not rename, remove, or tighten existing fields or tools in the same change. New descriptions and server instructions are allowed, but a directory reviews them again with the schema.
+3. Export the span for a call without these fields too. Omit each missing attribute; never fill it with a placeholder or a synthesized value. Flowlines still counts the call in operational metrics; without a reason the call cannot fully take part in behavioral analysis, and without a user intent it raises a telemetry-quality issue.
+4. Register `report_outcome` as usual. A new tool is additive: a directory shows it only after approval.
+5. After the deployment, the user updates each listing: for ChatGPT, request a new scan of the server; for a directory that reviews changes manually, resubmit the app. The server stays compatible with the approved schema until the updated listing is live.
+
+Keep both fields optional unless the user explicitly asks to make them required after the updated listing is live everywhere. Make that change in a separate deployment, and report its risk first: until the directory approves it, the listing still shows the fields as optional, so an agent can omit them and the server rejects that call.
+
+When no such client exists, for example a new server or one whose clients the operator deploys together with it, require both fields as **Implement the contract** describes.
+
 ## Implement the contract
 
 Make the smallest coherent change that satisfies all of these invariants:
 
-1. Require non-empty `reason` and `user_intent` strings in every ordinary tool input schema. Do not synthesize either value from prompts or tool arguments. Update server instructions, examples, affected callers, and tests because this is an intentional schema change.
+1. Require non-empty `reason` and `user_intent` strings in every ordinary tool input schema, except on a published server, where **Published servers** makes them optional. Do not synthesize either value from prompts or tool arguments. Update server instructions, examples, affected callers, and tests because this is an intentional schema change.
 2. Register `report_outcome` exactly as described in the contract and include its unconditional final-call instruction in the server instructions.
 3. Start one server span around each complete, validated `tools/call` execution. Give every invocation a fresh tool-call ID that is independent of the JSON-RPC request ID.
 4. Record the canonical attributes from `contract.md`, the validated tool-argument object, and only the final MCP result returned to the client. When the tool has a published description, emit it as `gen_ai.tool.description` from the registration metadata, trimmed and capped at 10,000 characters. Omit missing descriptions; do not infer them from arguments or reasons. Emit the tool's published input schema as `gen_ai.tool.input_schema`, and its output schema when declared as `gen_ai.tool.output_schema`, serialized whole from the same registration metadata; omit a schema that is missing or would exceed 50,000 characters.
@@ -102,6 +119,7 @@ Do not change sampling for an application-wide provider without explicit approva
 Add tests at the middleware or wrapper boundary, using the stack's in-memory exporter when available. At minimum cover:
 
 - a successful call with explicit `OK` span status, required attributes, distinct call/request IDs, stable `user.id`, arguments, and result;
+- on a published server, a call without `reason` and `user_intent` that the server accepts and that exports a span without `gen_ai.tool.call.reason` and `session.user_intent`;
 - `session.id` on every span, `report_outcome` included, from `_meta["session.id"]` when present and from the transport session otherwise;
 - when `user.id` is omitted under the rule above, no substitute or generated `user.id` on any span;
 - the registered tool description as `gen_ai.tool.description`, with trimming and the 10,000-character bound, plus omission when no description exists;
@@ -123,7 +141,7 @@ When the local checks pass, review the complete diff before you hand it off. The
 - every numbered invariant in **Implement the contract** and every rule in **Mandatory session and user identity** holds;
 - when the user agreed, name and email are sent whenever a source in **End-user name and email** has them. A server that authenticates its users but sends neither is a finding, unless the hand-off names each source you checked and why it had nothing;
 - each `tools/call` produces exactly one Flowlines MCP span, with no duplicate from automatic instrumentation and no span for `initialize`, `tools/list`, or other methods;
-- every ordinary tool schema requires `reason` and `user_intent`, and the server instructions, examples, callers, and tests match;
+- every ordinary tool schema requires `reason` and `user_intent`, or, on a published server, declares them as optional without other changes to existing fields or tools; the server instructions, examples, callers, and tests match;
 - no secret, request `_meta`, authorization material, raw exception, or stack trace reaches a span, a log, a test, or a committed file;
 - telemetry stays fail-open, shutdown flushing is bounded, and the change adds no second global provider and no sampling change;
 - the tests cover every case in **Verify locally** and fail when the behavior they cover is removed.
@@ -138,7 +156,7 @@ Do not deploy the integration yourself. Report:
 - where deployment must set the endpoint, API-key header, and service name;
 - the source of `session.id` (client metadata or transport fallback) and of `user.id`, or why `user.id` is absent and what the user confirmed;
 - whether name and email are sent and the source of each (verified claims, the server's user record, userinfo, or client metadata); otherwise, that the user declined, or which sources you checked and why each had nothing;
-- schema or client compatibility changes caused by `reason`, `user_intent`, or `report_outcome`;
+- schema or client compatibility changes caused by `reason`, `user_intent`, or `report_outcome`, and whether the fields are required or optional under **Published servers**;
 - checks run, and review findings fixed or left open;
 - any identity, propagation, sampling, payload, or shutdown limitation that remains.
 
@@ -146,7 +164,8 @@ Then ask the user to deploy:
 
 1. Set the endpoint, the API-key header from the deployment's secret manager, and the service name in the deployment environment, plus `OBSERVE_HEADERS` on the AGNTCY path.
 2. Deploy the server, and the updated MCP clients when the change asks clients to send `_meta["session.id"]`, `_meta["user.id"]`, `_meta["user.name"]`, or `_meta["user.email"]`.
-3. If invariant 7 found an existing identity mapping that points elsewhere, fix it in the Flowlines app before the first real calls. Existing sessions are not enriched retroactively.
+3. On a published server, update each listing after the deployment, as step 5 of **Published servers** describes.
+4. If invariant 7 found an existing identity mapping that points elsewhere, fix it in the Flowlines app before the first real calls. Existing sessions are not enriched retroactively.
 
 Then offer to use the Flowlines MCP server to confirm that the deployed integration works. Run the check only when the user accepts.
 

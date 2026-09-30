@@ -29,6 +29,8 @@ Every ordinary tool schema must require:
 
 Both values must be non-empty strings. Flowlines' own server caps them at 128 and 256 characters respectively, which is a useful emitter guardrail but not an ingestion limit. The legacy `intent` name is accepted by ingestion but new integrations must publish `reason`.
 
+On a server that clients outside the operator's deployment already call, such as a directory listing, publish both fields as optional instead and accept calls without them; see [Published servers](../SKILL.md#published-servers).
+
 Do not reconstruct either value with an LLM. Missing reasons remain visible for operational metrics but cannot participate fully in behavioral analysis; missing user intent produces a telemetry-quality issue.
 
 Clients attach analytics identity to request metadata, outside tool arguments:
