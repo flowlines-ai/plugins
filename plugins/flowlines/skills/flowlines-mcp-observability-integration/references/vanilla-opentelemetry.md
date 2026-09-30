@@ -38,14 +38,18 @@ call_id = fresh UUID for this invocation
 attributes = {
   gen_ai.operation.name: "execute_tool",
   gen_ai.tool.name: tool_name,
-  gen_ai.tool.call.reason: validated_arguments.reason,
-  session.user_intent: validated_arguments.user_intent,
   gen_ai.tool.call.arguments: JSON(validated_arguments),
   mcp.method.name: "tools/call",
   mcp.server.name: stable_server_name,
   gen_ai.tool.call.id: call_id,
   mcp.request.id: string(request_id),
 }
+
+# absent only on a published server, where both fields are optional; never fill them
+if validated_arguments.reason is a non-empty string:
+  attributes["gen_ai.tool.call.reason"] = validated_arguments.reason
+if validated_arguments.user_intent is a non-empty string:
+  attributes["session.user_intent"] = validated_arguments.user_intent
 
 if registered_tool_description is a non-empty string after trimming:
   attributes["gen_ai.tool.description"] = trimmed description, at most 10,000 characters
@@ -122,8 +126,9 @@ export async function observeTool<T>(input: {
   toolInputSchema?: Record<string, unknown>;
   toolOutputSchema?: Record<string, unknown>;
   validatedArguments: Record<string, unknown> & {
-    reason: string;
-    user_intent: string;
+    /** Optional only on a published server; see SKILL.md. */
+    reason?: string;
+    user_intent?: string;
   };
   request: ToolRequest;
   /** `null` only when no identity source exists; see SKILL.md. */
@@ -134,13 +139,16 @@ export async function observeTool<T>(input: {
   const attributes: Attributes = {
     "gen_ai.operation.name": "execute_tool",
     "gen_ai.tool.name": input.toolName,
-    "gen_ai.tool.call.reason": input.validatedArguments.reason,
-    "session.user_intent": input.validatedArguments.user_intent,
     "gen_ai.tool.call.arguments": JSON.stringify(input.validatedArguments),
     "mcp.method.name": "tools/call",
     "mcp.server.name": input.serverName,
     "gen_ai.tool.call.id": randomUUID(),
   };
+
+  // Absent only on a published server, where both fields are optional; never fill them.
+  const { reason, user_intent: userIntent } = input.validatedArguments;
+  if (reason) attributes["gen_ai.tool.call.reason"] = reason;
+  if (userIntent) attributes["session.user_intent"] = userIntent;
 
   // Mandatory on every span: the client's conversation ID, otherwise the transport session.
   const transportSessionId = input.request.transportSessionId.slice(0, 500);

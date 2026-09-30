@@ -75,7 +75,7 @@ The integration must also:
 
 - read the published description from the tool registration when available, trim it, cap it at 10,000 characters, and set `gen_ai.tool.description` on the same MCP span; omit absent or blank descriptions;
 - read the published input schema, and the output schema when declared, from the same registration metadata, serialize each as JSON, and set `gen_ai.tool.input_schema` and `gen_ai.tool.output_schema` on the same MCP span; omit a missing schema or one over 50,000 characters rather than truncating it;
-- add required `reason` and `user_intent` fields to every tool schema;
+- add required `reason` and `user_intent` fields to every tool schema, or optional ones on a published server, as [Published servers](../SKILL.md#published-servers) describes;
 - give every emitted MCP span, `report_outcome` included, a `session.id`: preserve `_meta["session.id"]` as request metadata when the client sends it, and otherwise set `session.id` and `mcp.session.id` from the MCP transport session on the span; do not assume the instrumentor does this;
 - resolve a stable user ID for every call from the source order in [Mandatory session and user identity](../SKILL.md#mandatory-session-and-user-identity), preferring the verified authenticated subject and otherwise requiring `_meta["user.id"]`; omit it only when that section allows;
 - set exact `user.id`, plus `user.name` and `user.email` from the source order in [End-user name and email](../SKILL.md#end-user-name-and-email) when the user agreed to send them, on the emitted MCP span; server-side values win;
