@@ -1,6 +1,6 @@
 {
   "name": "flowlines",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "Flowlines agent observability: analyse your Flowlines workspace over MCP and instrument MCP servers.",
   "author": { "name": "Flowlines", "email": "support@flowlines.ai", "url": "https://flowlines.ai" },
   "homepage": "https://flowlines.ai",
@@ -12,7 +12,7 @@
   "interface": {
     "displayName": "Flowlines",
     "shortDescription": "Agent observability for AI agents and MCP servers",
-    "longDescription": "Connect to your Flowlines workspace over MCP to review agent activity, compare releases, investigate sessions, and analyse user cohorts. Includes skills to instrument MCP servers and diagnose missing data.",
+    "longDescription": "Connect to your Flowlines workspace over MCP to review agent activity, compare releases, investigate sessions, analyse user cohorts, and onboard your own MCP servers. Includes a skill to diagnose missing data.",
     "developerName": "Flowlines",
     "category": "Developer Tools",
     "websiteURL": "https://flowlines.ai",
@@ -20,7 +20,7 @@
     "termsOfServiceURL": "https://flowlines.ai/terms",
     "defaultPrompt": [
       "What changed in my Flowlines namespace this week?",
-      "Use $flowlines-mcp-observability-integration to instrument this MCP server."
+      "Onboard me to Flowlines: instrument the MCP server in this repository."
     ],
     "composerIcon": "./assets/logo.png",
     "logo": "./assets/logo.png"

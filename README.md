@@ -4,8 +4,7 @@ Official [Flowlines](https://flowlines.ai) plugins for coding agents. One reposi
 
 | Component | What it does |
 |---|---|
-| `flowlines` MCP server | Connects your agent to your Flowlines workspace at `https://api.flowlines.ai/mcp`. Ask what your agents' users did, what changed since a release, where sessions go wrong, and record findings as notes. |
-| `flowlines-mcp-observability-integration` skill | Instruments an MCP server so its tool calls arrive in Flowlines as canonical MCP telemetry, through AGNTCY Observe or vanilla OpenTelemetry. |
+| `flowlines` MCP server | Connects your agent to your Flowlines workspace at `https://api.flowlines.ai/mcp`. Ask what your agents' users did, what changed since a release, where sessions go wrong, and record findings as notes. Its `onboard` tool gives your agent the plan to instrument your own MCP server and checks the telemetry that arrives. |
 | `flowlines-weekly-review` skill | A periodic review over the MCP server: what changed since the last review, signals, outcome movements, and what to pin for next time. |
 | `flowlines-release-check` skill | Before-and-after comparison of an agent release: outcomes, intents, cost, signals, and evidence sessions, with the right denominators. |
 | `flowlines-investigate-session` skill | From a signal, a user, or a complaint to the failing turn, with minimal exposure of end-user content. |
@@ -15,9 +14,9 @@ Official [Flowlines](https://flowlines.ai) plugins for coding agents. One reposi
 ## Privacy notice
 
 - The MCP server reads production conversations between end users and your agents. Treat everything it returns as confidential; it never writes to your namespace except through the explicit `save_note` and `report_outcome` tools.
-- `flowlines-mcp-observability-integration` exports validated tool arguments, client-visible results, and user identity metadata from the instrumented server to Flowlines. That data can contain personal data, customer data, source code, or other sensitive content.
+- An MCP server instrumented from the `onboard` plan exports validated tool arguments, client-visible results, and user identity metadata to Flowlines. That data can contain personal data, customer data, source code, or other sensitive content. You choose what it records on the Flowlines get-started page.
 
-`flowlines-mcp-observability-integration` asks for explicit consent before changing anything, and never prints or stores your Flowlines API key in chat. It needs a namespace API key, created on the Flowlines get-started page; the skill opens that page for you when you have no key yet.
+`onboard` is read-only: it returns a plan for your agent to carry out and checks the calls that arrive. The namespace API key is created on the Flowlines get-started page and shown once there; never paste it into chat.
 
 ## Install
 
@@ -55,7 +54,7 @@ The plugin registers an MCP server named `flowlines`. If you previously added th
 
 ### After you sign in
 
-Signing in also creates your Flowlines account. When you have no workspace or API key yet, `flowlines-mcp-observability-integration` opens the Flowlines get-started page, which creates your workspace and a namespace API key, then turns green on your server's first tool call.
+Signing in also creates your Flowlines account. When you have no workspace or API key yet, the Flowlines get-started page creates them, then turns green on your server's first tool call. To instrument your MCP server, ask your agent to onboard you to Flowlines: it calls `onboard` for your namespace, carries out the plan, and verifies the first calls with `onboard` and action `check`.
 
 ### MCP connection errors
 
