@@ -62,7 +62,9 @@ dist/openai/
 The archive contains the portable manifest, the production MCP endpoint, four
 analysis skills, and listing assets. It also includes compatibility manifests
 for older clients. It contains no `.app.json`, personal app ID, hooks, or
-marketplace. In one **With MCP** draft, upload this ZIP and review the imported
+marketplace. Both generated manifests use the existing public package name
+`app-6aa11dfaeb20819187226d4810e1d94a`. The repo marketplace keeps `flowlines`.
+Upload this ZIP to the existing Flowlines listing and review the imported
 endpoint, skills, and listing. Complete OAuth setup and the review materials in
 that draft. Do not create a second skills-only listing.
 

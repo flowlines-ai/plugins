@@ -34,6 +34,7 @@ PY
 
 echo "== Public submission assets"
 python3 "${ROOT}/scripts/build_public_submission.py" --output "${validation_home}/submission"
+submission_name=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["name"])' "${validation_home}/submission/flowlines/plugin.json")
 # This catalog exists only in the disposable test home, not in the release ZIP.
 python3 - "${validation_home}/submission" <<'PY'
 import json
@@ -41,11 +42,12 @@ import sys
 from pathlib import Path
 
 path = Path(sys.argv[1]) / ".agents/plugins/marketplace.json"
+manifest = json.loads((Path(sys.argv[1]) / "flowlines/plugin.json").read_text())
 path.parent.mkdir(parents=True)
 path.write_text(json.dumps({
     "name": "flowlines-submission-check",
     "plugins": [{
-        "name": "flowlines",
+        "name": manifest["name"],
         "source": {"source": "local", "path": "./flowlines"},
         "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
         "category": "Developer Tools",
@@ -53,9 +55,9 @@ path.write_text(json.dumps({
 }))
 PY
 codex_check plugin marketplace add "${validation_home}/submission" >/dev/null
-codex_check plugin add flowlines@flowlines-submission-check --json
+codex_check plugin add "${submission_name}@flowlines-submission-check" --json
 check_mcp
-codex_check plugin remove flowlines@flowlines-submission-check >/dev/null
+codex_check plugin remove "${submission_name}@flowlines-submission-check" >/dev/null
 
 codex_check plugin marketplace add "${ROOT}" >/dev/null
 for plugin in "${ROOT}"/plugins/*/; do

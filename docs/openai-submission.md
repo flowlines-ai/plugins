@@ -24,7 +24,7 @@ tested bytes in the generated directory and ZIP.
 | Field | Value or source |
 | --- | --- |
 | Submission type | With MCP, including skills |
-| Public name / package name | Flowlines / `flowlines` |
+| Public name / package name | Flowlines / `app-6aa11dfaeb20819187226d4810e1d94a` |
 | Short description | Understand your MCP servers |
 | Developer identity | Flowlines; select its verified business identity in the owning Platform organization. |
 | Category | Developer Tools |
@@ -38,6 +38,10 @@ tested bytes in the generated directory and ZIP.
 | Authentication | OAuth; complete the portal's discovery/client configuration. |
 | Skills | Weekly review, release check, session investigation, cohort builder; generated under `flowlines/skills/`. |
 | Custom UI | None in this submission; do not add UI screenshots or frame domains. |
+
+Upload updates to the existing Flowlines listing. Its package name is
+`app-6aa11dfaeb20819187226d4810e1d94a`; both generated manifests must use that
+exact name. The repo marketplace keeps `flowlines` as its package name.
 
 The archive `flowlines.zip` holds one plugin root with the skills, their
 resources, listing assets, and `mcp.json`. That file declares exactly one remote

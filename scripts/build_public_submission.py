@@ -14,6 +14,8 @@ from validate_branding import validate_logo
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "plugins" / "flowlines"
+# Existing public listing identity; the repo marketplace keeps the name flowlines.
+PUBLIC_PLUGIN_NAME = "app-6aa11dfaeb20819187226d4810e1d94a"
 ANALYSIS_SKILLS = (
     "flowlines-weekly-review",
     "flowlines-release-check",
@@ -46,6 +48,7 @@ def write_submission(output: Path) -> None:
         for key in ("name", "version", "author", "homepage", "repository", "license", "keywords")
     }
     manifest.update({
+        "name": PUBLIC_PLUGIN_NAME,
         "description": "Review MCP server activity, compare releases, investigate sessions, and analyse user cohorts with Flowlines.",
         "skills": "./skills/",
         "mcpServers": "./.mcp.json",

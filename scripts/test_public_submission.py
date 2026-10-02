@@ -75,7 +75,8 @@ class PublicSubmissionTests(unittest.TestCase):
                 **{key: value for key, value in manifest.items() if key not in ("skills", "mcpServers", "interface")},
                 "extensions": {"com.openai": {"interface": manifest["interface"]}},
             })
-            self.assertEqual(manifest["name"], "flowlines")
+            self.assertEqual(manifest["name"], "app-6aa11dfaeb20819187226d4810e1d94a")
+            self.assertEqual(source_manifest["name"], "flowlines")
             self.assertEqual(manifest["version"], source_manifest["version"])
             self.assertEqual(manifest["interface"]["displayName"], "Flowlines")
             support_url = "https://github.com/flowlines-ai/plugins/issues"
