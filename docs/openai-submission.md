@@ -28,10 +28,10 @@ tested bytes in the generated directory and ZIP.
 | Short description | Understand your MCP servers |
 | Developer identity | Flowlines; select its verified business identity in the owning Platform organization. |
 | Category | Developer Tools |
-| Website | https://flowlines.ai |
-| Support | https://github.com/flowlines-ai/plugins/issues |
-| Privacy policy | https://flowlines.ai/privacy |
-| Terms | https://flowlines.ai/terms |
+| Website | https://flowlines.ai/ |
+| Support | https://trust.flowlines.ai/en |
+| Privacy policy | https://app.flowlines.ai/privacy-policy |
+| Terms | https://app.flowlines.ai/terms-of-service |
 | Logo | Generated `flowlines/assets/logo.png` |
 | MCP URL type | Universal |
 | MCP server URL | `https://api.flowlines.ai/mcp` |

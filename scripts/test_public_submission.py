@@ -79,12 +79,17 @@ class PublicSubmissionTests(unittest.TestCase):
             self.assertEqual(source_manifest["name"], "flowlines")
             self.assertEqual(manifest["version"], source_manifest["version"])
             self.assertEqual(manifest["interface"]["displayName"], "Flowlines")
-            support_url = "https://github.com/flowlines-ai/plugins/issues"
-            self.assertEqual(manifest["interface"]["supportURL"], support_url)
-            self.assertIn(
-                f"| Support | {support_url} |",
-                (ROOT / "docs/openai-submission.md").read_text(),
-            )
+            # Preserve the URLs from the existing published Flowlines listing.
+            listing_urls = {
+                "websiteURL": ("Website", "https://flowlines.ai/"),
+                "supportURL": ("Support", "https://trust.flowlines.ai/en"),
+                "privacyPolicyURL": ("Privacy policy", "https://app.flowlines.ai/privacy-policy"),
+                "termsOfServiceURL": ("Terms", "https://app.flowlines.ai/terms-of-service"),
+            }
+            for field, (label, url) in listing_urls.items():
+                self.assertEqual(source_manifest["extensions"]["com.openai"]["interface"][field], url)
+                self.assertEqual(manifest["interface"][field], url)
+                self.assertIn(f"| {label} | {url} |", (ROOT / "docs/openai-submission.md").read_text())
             self.assertEqual(manifest["skills"], "./skills/")
             self.assertEqual(manifest["mcpServers"], "./.mcp.json")
             for name in ("mcp.json", ".mcp.json"):
@@ -107,7 +112,8 @@ class PublicSubmissionTests(unittest.TestCase):
             with ZipFile(output / "flowlines.zip") as archive:
                 self.assertIsNone(archive.testzip())
                 archived_manifest = json.loads(archive.read(".codex-plugin/plugin.json"))
-                self.assertEqual(archived_manifest["interface"]["supportURL"], support_url)
+                for field, (_label, url) in listing_urls.items():
+                    self.assertEqual(archived_manifest["interface"][field], url)
                 self.assertEqual(set(archive.namelist()), {
                     path.relative_to(plugin).as_posix()
                     for path in plugin.rglob("*") if path.is_file()

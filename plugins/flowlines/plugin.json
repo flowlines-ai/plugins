@@ -17,10 +17,10 @@
         "developerName": "Flowlines",
         "category": "Developer Tools",
         "capabilities": ["Read", "Write"],
-        "websiteURL": "https://flowlines.ai",
-        "supportURL": "https://github.com/flowlines-ai/plugins/issues",
-        "privacyPolicyURL": "https://flowlines.ai/privacy",
-        "termsOfServiceURL": "https://flowlines.ai/terms",
+        "websiteURL": "https://flowlines.ai/",
+        "supportURL": "https://trust.flowlines.ai/en",
+        "privacyPolicyURL": "https://app.flowlines.ai/privacy-policy",
+        "termsOfServiceURL": "https://app.flowlines.ai/terms-of-service",
         "defaultPrompt": [
           "What changed in my Flowlines namespace this week?",
           "Onboard me to Flowlines: instrument the MCP server in this repository."
