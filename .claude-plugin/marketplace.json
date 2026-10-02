@@ -10,8 +10,8 @@
     {
       "name": "flowlines",
       "source": "./plugins/flowlines",
-      "description": "Flowlines agent observability: analyse your Flowlines workspace over MCP and instrument MCP servers.",
-      "version": "0.4.0",
+      "description": "Flowlines MCP observability: analyse MCP server usage, investigate sessions, and instrument MCP servers.",
+      "version": "0.4.1",
       "author": { "name": "Flowlines", "email": "support@flowlines.ai", "url": "https://flowlines.ai" },
       "homepage": "https://flowlines.ai",
       "category": "observability",

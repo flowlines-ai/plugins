@@ -1,0 +1,33 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "flowlines",
+  "version": "0.4.1",
+  "description": "Flowlines MCP observability: analyse MCP server usage, investigate sessions, and instrument MCP servers.",
+  "author": { "name": "Flowlines", "email": "support@flowlines.ai", "url": "https://flowlines.ai" },
+  "homepage": "https://flowlines.ai",
+  "repository": "https://github.com/flowlines-ai/plugins",
+  "license": "MIT",
+  "keywords": ["flowlines", "observability", "mcp", "telemetry", "opentelemetry", "analytics"],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Flowlines",
+        "shortDescription": "Understand your MCP servers",
+        "longDescription": "Connect to your Flowlines workspace over MCP to review MCP server activity, compare releases, investigate sessions, analyse user cohorts, and onboard your own MCP servers. Includes a skill to diagnose missing data.",
+        "developerName": "Flowlines",
+        "category": "Developer Tools",
+        "capabilities": ["Read", "Write"],
+        "websiteURL": "https://flowlines.ai/",
+        "supportURL": "https://trust.flowlines.ai/en",
+        "privacyPolicyURL": "https://app.flowlines.ai/privacy-policy",
+        "termsOfServiceURL": "https://app.flowlines.ai/terms-of-service",
+        "defaultPrompt": [
+          "What changed in my Flowlines namespace this week?",
+          "Onboard me to Flowlines: instrument the MCP server in this repository."
+        ],
+        "composerIcon": "./assets/logo.png",
+        "logo": "./assets/logo.png"
+      }
+    }
+  }
+}

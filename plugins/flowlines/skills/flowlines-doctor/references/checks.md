@@ -49,7 +49,7 @@ Configured under Settings, Connectors in the Flowlines app. Namespace API keys d
 2. Validate re-checks the provider credentials and reports the mode (`polling`, `push`, or `publicShare`), the visible projects, an estimated trace count, and the history window in days. `invalidCredentials` after validation means the provider key or project id is wrong or was rotated.
 3. Sync queues an immediate pull. Polling connectors otherwise pull on their own schedule; a `lastSyncedAt` that stops advancing while the status stays `configured` is the symptom to report.
 4. History: the connector only backfills the provider's history window. Older traces are not expected.
-5. Arrival: imported sessions keep their original start times, and `list_sessions` filters on start time, not on when Flowlines received them, so a `from` set to the sync time can return nothing after a successful historical import. Instead, `aggregate_sessions` with `agent_name` set to the connector's agent and a range covering the provider's history window, before and after the sync, and compare `session_count`; or `get_session` on a trace id you know the provider holds.
+5. Arrival: imported sessions keep their original start times, and `list_sessions` filters on start time, not on when Flowlines received them, so a `from` set to the sync time can return nothing after a successful historical import. Instead, `aggregate_sessions` with `agent_name` set to the connector's service name and a range covering the provider's history window, before and after the sync, and compare `session_count`; or `get_session` on a trace id you know the provider holds.
 
 ## SDK and OTLP applications
 
@@ -58,7 +58,7 @@ Instrumented with the Flowlines SDKs or a plain OpenTelemetry exporter.
 1. Exporter target: the base URL, not a signal path; the exporter appends `/v1/traces` and `/v1/logs`. A signal-specific endpoint variable overrides the base and must then include the path.
 2. Header: `OTEL_EXPORTER_OTLP_HEADERS=x-flowlines-api-key=<secret>`. Header-per-signal variables override it.
 3. Protocol: `http/protobuf`. gRPC exporters will not reach the HTTP endpoint.
-4. Service name: `OTEL_SERVICE_NAME` becomes the agent name; changing it splits the agent in Flowlines.
+4. Service name: `OTEL_SERVICE_NAME` sets the service name in Flowlines; changing it splits the service history.
 5. Run the reachability check from the application host, then one request through the application, then `list_sessions` with `from` set a few minutes back.
 
 ## Server-side checks over the MCP server
@@ -68,8 +68,8 @@ Instrumented with the Flowlines SDKs or a plain OpenTelemetry exporter.
 | Nothing arrives | `get_workspace`, `list_sessions` with `from` | ingestion status per namespace; recent arrivals |
 | Analysis stuck | `aggregate_sessions` grouped by `analysis_status` | `received` or `queued_for_analysis` growing, or `analysis_failed` present |
 | Users unidentified | `aggregate_sessions` metric `session_count`, `include_unidentified` true vs false | identified share of sessions (never `user_count`, which excludes empty ids); then `list_agent_attributes` to find the attribute to map |
-| Agent names split | `list_agents` | inconsistent service names |
+| Service names split | `list_agents` | inconsistent service names |
 | Empty turns | `get_session` on one recent session | capture disabled on the emitter |
 | Known gaps | `list_notes` | already-pinned ingestion caveats |
 
-Identity mapping itself is configured per agent in the Flowlines app under the agent's mappings (global, users, aggregates); the MCP server cannot change it.
+Identity mapping itself is configured per source in the Flowlines app under that source's mappings (global, users, aggregates); the MCP server cannot change it.

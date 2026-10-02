@@ -9,9 +9,11 @@ already exists.
 ## Listing and server details
 
 Run `python3 scripts/build_public_submission.py --output dist/openai` first.
-The generated `flowlines/.codex-plugin/plugin.json` contains the listing copy,
-source version, legal links, capabilities, and three starter prompts. Use that
-copy in the portal so the tested assets match the submitted version.
+The generated `flowlines/plugin.json` contains the source version and listing
+copy under `extensions.com.openai.interface`, including legal links,
+capabilities, and three starter prompts. The compatibility manifest at
+`flowlines/.codex-plugin/plugin.json` carries the same values. Use that copy in
+the portal so the tested assets match the submitted version.
 
 The builder validates the shared logo and composer icon before writing the
 archive. Keep `assets/logo.png` as an 8-bit RGB/RGBA PNG without interlacing,
@@ -22,14 +24,14 @@ tested bytes in the generated directory and ZIP.
 | Field | Value or source |
 | --- | --- |
 | Submission type | With MCP, including skills |
-| Public name / package name | Flowlines / `flowlines` |
-| Short description | Understand your AI agents |
+| Public name / package name | Flowlines / `app-6aa11dfaeb20819187226d4810e1d94a` |
+| Short description | Understand your MCP servers |
 | Developer identity | Flowlines; select its verified business identity in the owning Platform organization. |
 | Category | Developer Tools |
-| Website | https://flowlines.ai |
-| Support | https://github.com/flowlines-ai/plugins/issues |
-| Privacy policy | https://flowlines.ai/privacy |
-| Terms | https://flowlines.ai/terms |
+| Website | https://flowlines.ai/ |
+| Support | https://trust.flowlines.ai/en |
+| Privacy policy | https://app.flowlines.ai/privacy-policy |
+| Terms | https://app.flowlines.ai/terms-of-service |
 | Logo | Generated `flowlines/assets/logo.png` |
 | MCP URL type | Universal |
 | MCP server URL | `https://api.flowlines.ai/mcp` |
@@ -37,13 +39,17 @@ tested bytes in the generated directory and ZIP.
 | Skills | Weekly review, release check, session investigation, cohort builder; generated under `flowlines/skills/`. |
 | Custom UI | None in this submission; do not add UI screenshots or frame domains. |
 
+Upload updates to the existing Flowlines listing. Its package name is
+`app-6aa11dfaeb20819187226d4810e1d94a`; both generated manifests must use that
+exact name. The repo marketplace keeps `flowlines` as its package name.
+
 The archive `flowlines.zip` holds one plugin root with the skills, their
-resources, and listing assets. It has no MCP/app reference. Add the skill bundle
-in the **Skills** section of the same **With MCP** draft and confirm all four
-skills are accepted. The portal's server configuration supplies the MCP binding.
-If the portal asks for individual skill bundles, package each generated skill
-directory with its `SKILL.md` and resources; verify the imported tree. The exact
-With MCP upload interaction still needs a portal check.
+resources, listing assets, and `mcp.json`. That file declares exactly one remote
+server with transport `streamable-http` at `https://api.flowlines.ai/mcp`.
+The included `.mcp.json` uses `http` for compatibility with older clients.
+Upload the ZIP in the **With MCP** flow, verify the imported endpoint, and
+confirm all four skills are accepted. Complete OAuth in the dashboard. Local
+packaging does not establish portal acceptance or successful authentication.
 
 Do not enter the maintainer's personal app ID or create a separate skills-only
 plugin. A public submission must provide the server URL and review materials
@@ -54,7 +60,7 @@ Release notes for the initial submission:
 > Initial Flowlines plugin with OAuth access to the hosted Flowlines MCP server
 > and four shared analysis workflows: weekly review, release comparison, session
 > investigation, and cohort analysis. Requires an authorized Flowlines workspace
-> with agent data. Repository instrumentation is outside this public release.
+> with MCP telemetry. Repository instrumentation is outside this public release.
 
 ## Publisher and review prerequisites
 
@@ -86,8 +92,8 @@ Successful personal OAuth alone does not validate every review requirement.
 
 ## Demo data
 
-Prepare a synthetic workspace with a `review-demo` namespace, one agent named
-`support-agent`, and at least 14 days of analysed sessions. Include successful
+Prepare a synthetic workspace with a `review-demo` namespace, one MCP server named
+`support-mcp`, and at least 14 days of analysed sessions. Include successful
 and unsuccessful outcomes, intents, a known failed-session cause, a release
 boundary, identified users, and a saved baseline cohort. Keep a separate empty
 namespace and a second account with no access to `review-demo`.
@@ -138,7 +144,7 @@ prior review note. **Status:** pending.
 
 ### P3 — Release comparison
 
-**Prompt:** "Use Flowlines to compare support-agent outcomes for the three days before and after [RELEASE_TIMESTAMP]."
+**Prompt:** "Use Flowlines to compare session outcomes for the support-mcp server for the three days before and after [RELEASE_TIMESTAMP]."
 
 **Expected:** select `flowlines-release-check`; use aggregate day buckets and
 metric definitions, equal windows, and summed counts for rates. Exclude a mixed

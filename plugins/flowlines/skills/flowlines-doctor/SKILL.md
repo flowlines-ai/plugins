@@ -33,7 +33,7 @@ Use this section when authentication is required, the client cannot start the Fl
 
 ### Make one bounded sign-in attempt
 
-1. Use the failing client's dedicated MCP or plugin sign-in/reconnect action first. For a local Codex MCP connection, use `codex mcp login flowlines` only when the shell uses the same host, OS user, and client configuration as the failing connection. In Claude Code, use `/mcp`, select `flowlines`, and authenticate. A local CLI login does not repair a separate hosted connector; use that connector's reconnect action. If the action is not exposed to the agent, give the user the reconnect step in their client and wait for completion.
+1. Use the failing client's dedicated MCP or plugin sign-in/reconnect action first. For a local Codex MCP connection, use `codex mcp login flowlines` only when the shell uses the same host, OS user, and client configuration as the failing connection. In Claude Code, use `/mcp`, select `flowlines`, and authenticate. A local CLI login does not repair a separate hosted connector; use that connector's reconnect action. If the action is not available to you, give the user the reconnect step in their client and wait for completion.
 2. Before a shell login, check whether the environment supports browser sign-in and access to the client's configured credential store. For an explicit sandbox permission failure, use the client's normal approval mechanism for that command, with the same OS user and client configuration. Do not use `sudo` or another account, disable the sandbox globally, change credential storage settings, or read saved tokens.
 3. If sign-in returns an authorization URL but does not launch it, use an available native URL opener on the user's client host: `open` on macOS, `Start-Process -FilePath` in Windows PowerShell, or `xdg-open` in a Linux desktop session. Pass the exact URL as one safely quoted argument. Do not assume a remote shell, WSL, container, or headless session has access to the user's browser or OAuth callback. When it does not, use the client's supported remote sign-in flow or ask the user to reconnect from their client; do not change callback settings or create a tunnel. Do not search for a login page, alter the URL, or paste an authorization URL containing state or codes into chat or the final report.
 4. Ask the user to complete any password, passkey, MFA, or consent step in the browser. Never request credentials or tokens, inspect password fields, enter secrets, complete MFA, or approve permissions on the user's behalf. Do not drive the browser or use computer-use to advance the sign-in, unless the user explicitly asks you to.
@@ -52,7 +52,7 @@ When connection checks remain blocked, record what could not be checked. Do not 
 Ask which sources the namespace expects, or infer them:
 
 - `get_workspace` lists every namespace with its ingestion status; pick the namespace and note whether it has ever received data. When an MCP server is expected, `get_mcp_overview` with `range` `30d` adds its call counts and ingestion status; without that tool, read MCP ingestion health in the app.
-- `get_context` returns the activity overview and the agent glossary; `list_agents` shows what has actually been observed. An expected agent that is absent from `list_agents` has never been ingested under that name.
+- `get_context` returns the activity overview and the service glossary; `list_agents` shows what has actually been observed. An expected service that is absent from `list_agents` has never been ingested under that name.
 - `list_sessions` with `from` set to the last hour or day shows whether anything is arriving right now. `from` filters on session start time, not ingestion time, so it suits live sources; imported history keeps its original dates. Sessions normally appear within minutes; analysis follows later.
 
 Record the expected sources before checking any of them.
@@ -71,7 +71,7 @@ When data arrives but looks wrong, these tools locate the problem without openin
 
 - Analysis stuck: `aggregate_sessions` grouped by `analysis_status` for `24h` and `7d`. A growing `received` or `queued_for_analysis` share, or any `analysis_failed`, is a processing problem, not an ingestion one.
 - Users unidentified: `aggregate_sessions` with metric `session_count`, once with `include_unidentified: true` and once with `false`; the identified share is the second divided by the first. Do not use `user_count` for this, it never counts empty user ids. A low share means identity mapping is incomplete; `list_agent_attributes` shows which attributes arrive so the right one can be mapped in the app.
-- Agents split or misnamed: `list_agents` shows near-duplicate names caused by inconsistent service names.
+- Service names split or misnamed: `list_agents` shows near-duplicate names caused by inconsistent service names.
 - Content missing from sessions: `get_session` on one recent session and confirm the turn tree has user and assistant content. Empty MCP tool payloads point at the instrumented server's capture settings.
 - Known artifacts: `list_notes` before concluding anything; ingestion gaps are often already pinned.
 
