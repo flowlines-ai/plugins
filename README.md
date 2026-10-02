@@ -118,6 +118,7 @@ plugins/flowlines/
   .claude-plugin/plugin.json        Claude Code manifest
   .codex-plugin/plugin.json         Codex manifest and directory listing
   .mcp.json                         MCP server shared by both clients
+  README.md                         Claude plugin directory description
   skills/                           Skills shared by both clients
 ```
 
