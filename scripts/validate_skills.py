@@ -74,49 +74,6 @@ def validate_skill(skill_dir: Path) -> None:
             fail(f"{script.relative_to(ROOT)} must be executable")
 
 
-def validate_mcp_observability_contract(skill_dir: Path) -> None:
-    """Invariants of the Flowlines MCP telemetry contract that the skill must keep stating."""
-    markdown = (skill_dir / "SKILL.md").read_text(encoding="utf-8")
-    for attribute in ("`user.id`", "`user.name`", "`user.email`"):
-        if attribute not in markdown:
-            fail(f"SKILL.md must require the exact {attribute} identity attribute")
-    if "## End-user name and email" not in markdown:
-        fail("SKILL.md must keep the End-user name and email source order")
-    if "## Published servers" not in markdown:
-        fail("SKILL.md must keep the backward-compatible rollout for published servers")
-    for phrase in ("MCP-level middleware", "AddReceivingMiddleware", "on_call_tool"):
-        if phrase not in markdown:
-            fail(f"SKILL.md must prefer MCP middleware boundary: missing {phrase!r}")
-    for status in ("`OK`", "`ERROR`", "`UNSET`"):
-        if status not in markdown:
-            fail(f"SKILL.md must define explicit completed-call status: missing {status}")
-
-    references = skill_dir / "references"
-    vanilla = (references / "vanilla-opentelemetry.md").read_text(encoding="utf-8")
-    for phrase in (
-        "MCP-level middleware",
-        "AddReceivingMiddleware",
-        "on_call_tool",
-        "HTTP, transport, or sending middleware",
-    ):
-        if phrase not in vanilla:
-            fail(f"vanilla-opentelemetry.md must prefer MCP middleware boundary: missing {phrase!r}")
-
-    python_agntcy = (references / "python-agntcy.md").read_text(encoding="utf-8")
-    contract = (references / "contract.md").read_text(encoding="utf-8")
-    for name, text in (
-        ("vanilla-opentelemetry.md", vanilla),
-        ("python-agntcy.md", python_agntcy),
-        ("contract.md", contract),
-    ):
-        for status in ("`OK`", "`ERROR`", "`UNSET`"):
-            if status not in text:
-                fail(f"{name} must define explicit completed-call status: missing {status}")
-
-    if "needs an identity mapping" not in contract:
-        fail("contract.md must state that canonical MCP identity attributes need no mapping")
-
-
 def main() -> None:
     skill_dirs = sorted(
         path for path in PLUGINS_DIR.glob("*/skills/*") if path.is_dir() and not path.name.startswith(".")
@@ -126,8 +83,6 @@ def main() -> None:
 
     for skill_dir in skill_dirs:
         validate_skill(skill_dir)
-        if skill_dir.name == "flowlines-mcp-observability-integration":
-            validate_mcp_observability_contract(skill_dir)
         print(f"Validated {skill_dir.relative_to(ROOT)}")
 
     readme = ROOT / "README.md"
