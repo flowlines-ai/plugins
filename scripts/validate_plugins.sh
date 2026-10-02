@@ -15,14 +15,27 @@ for plugin in "${ROOT}"/plugins/*/; do
 done
 
 echo "== Codex"
-CODEX_HOME=$(mktemp -d)
-export CODEX_HOME
-trap 'rm -rf "${CODEX_HOME}"' EXIT HUP INT TERM
+validation_home=$(mktemp -d)
+trap 'rm -rf "${validation_home}"' EXIT HUP INT TERM
+codex_check() {
+  env CODEX_HOME="${validation_home}" codex "$@"
+}
+check_mcp() {
+  codex_check mcp list --json > "${validation_home}/mcp.json"
+  python3 - "${validation_home}/mcp.json" <<'PY'
+import json
+import sys
+
+servers = json.load(open(sys.argv[1]))
+if len(servers) != 1 or servers[0]["transport"].get("url") != "https://api.flowlines.ai/mcp":
+    sys.exit("Expected exactly one Flowlines MCP server at https://api.flowlines.ai/mcp")
+PY
+}
 
 echo "== Public submission assets"
-python3 "${ROOT}/scripts/build_public_submission.py" --output "${CODEX_HOME}/submission"
+python3 "${ROOT}/scripts/build_public_submission.py" --output "${validation_home}/submission"
 # This catalog exists only in the disposable test home, not in the release ZIP.
-python3 - "${CODEX_HOME}/submission" <<'PY'
+python3 - "${validation_home}/submission" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -39,15 +52,16 @@ path.write_text(json.dumps({
     }],
 }))
 PY
-codex plugin marketplace add "${CODEX_HOME}/submission" >/dev/null
-codex plugin add flowlines@flowlines-submission-check --json
-codex mcp list --json > "${CODEX_HOME}/submission-mcp.json"
-python3 -c 'import json,sys; servers=json.load(open(sys.argv[1])); sys.exit("Submission assets registered a desktop MCP server") if servers else None' "${CODEX_HOME}/submission-mcp.json"
+codex_check plugin marketplace add "${validation_home}/submission" >/dev/null
+codex_check plugin add flowlines@flowlines-submission-check --json
+check_mcp
+codex_check plugin remove flowlines@flowlines-submission-check >/dev/null
 
-codex plugin marketplace add "${ROOT}" >/dev/null
+codex_check plugin marketplace add "${ROOT}" >/dev/null
 for plugin in "${ROOT}"/plugins/*/; do
   name=$(basename "${plugin}")
-  codex plugin add "${name}@${MARKETPLACE}" --json
+  codex_check plugin add "${name}@${MARKETPLACE}" --json
 done
-codex plugin list
-codex mcp list
+check_mcp
+codex_check plugin list
+codex_check mcp list

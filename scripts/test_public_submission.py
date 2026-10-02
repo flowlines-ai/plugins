@@ -30,9 +30,36 @@ def source_hashes() -> dict[str, str]:
 
 
 class PublicSubmissionTests(unittest.TestCase):
-    def test_archive_contains_one_flowlines_skill_bundle(self) -> None:
+    def test_portable_and_compatibility_manifests_match(self) -> None:
+        portable = json.loads((SOURCE / "plugin.json").read_text())
+        codex = json.loads((SOURCE / ".codex-plugin/plugin.json").read_text())
+        claude = json.loads((SOURCE / ".claude-plugin/plugin.json").read_text())
+        self.assertEqual(portable["$schema"], "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json")
+        for key in ("name", "version", "description", "author", "homepage", "repository", "license", "keywords"):
+            self.assertEqual(portable[key], codex[key], key)
+            self.assertEqual(portable[key], claude[key], key)
+        self.assertEqual(portable["extensions"]["com.openai"], {"interface": codex["interface"]})
+        for key in ("skills", "mcpServers", "interface"):
+            self.assertNotIn(key, portable)
+        self.assertEqual(codex["skills"], "./skills/")
+        self.assertEqual(codex["mcpServers"], "./.mcp.json")
+        self.assertEqual(claude["mcpServers"], "./.mcp.json")
+        portable_mcp = json.loads((SOURCE / "mcp.json").read_text())
+        legacy_mcp = json.loads((SOURCE / ".mcp.json").read_text())
+        self.assertEqual(portable_mcp, {
+            "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+            "mcpServers": {"flowlines": {"type": "streamable-http", "url": "https://api.flowlines.ai/mcp"}},
+        })
+        self.assertEqual(legacy_mcp, {
+            "mcpServers": {"flowlines": {"type": "http", "url": portable_mcp["mcpServers"]["flowlines"]["url"]}},
+        })
+        marketplace = json.loads((ROOT / ".claude-plugin/marketplace.json").read_text())
+        entry = next(plugin for plugin in marketplace["plugins"] if plugin["name"] == portable["name"])
+        self.assertEqual(entry["version"], portable["version"])
+
+    def test_archive_contains_one_flowlines_mcp_plugin(self) -> None:
         before = source_hashes()
-        source_manifest = json.loads((SOURCE / ".codex-plugin/plugin.json").read_text())
+        source_manifest = json.loads((SOURCE / "plugin.json").read_text())
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary) / "submission"
             result = subprocess.run(
@@ -42,6 +69,12 @@ class PublicSubmissionTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             plugin = output / "flowlines"
             manifest = json.loads((plugin / ".codex-plugin/plugin.json").read_text())
+            portable = json.loads((plugin / "plugin.json").read_text())
+            self.assertEqual(portable, {
+                "$schema": source_manifest["$schema"],
+                **{key: value for key, value in manifest.items() if key not in ("skills", "mcpServers", "interface")},
+                "extensions": {"com.openai": {"interface": manifest["interface"]}},
+            })
             self.assertEqual(manifest["name"], "flowlines")
             self.assertEqual(manifest["version"], source_manifest["version"])
             self.assertEqual(manifest["interface"]["displayName"], "Flowlines")
@@ -52,9 +85,12 @@ class PublicSubmissionTests(unittest.TestCase):
                 (ROOT / "docs/openai-submission.md").read_text(),
             )
             self.assertEqual(manifest["skills"], "./skills/")
-            for key in ("mcpServers", "apps", "hooks"):
+            self.assertEqual(manifest["mcpServers"], "./.mcp.json")
+            for name in ("mcp.json", ".mcp.json"):
+                self.assertEqual((plugin / name).read_bytes(), (SOURCE / name).read_bytes())
+            for key in ("apps", "hooks"):
                 self.assertNotIn(key, manifest)
-            for name in (".mcp.json", ".app.json", ".claude-plugin", ".agents", "hooks"):
+            for name in (".app.json", ".claude-plugin", ".agents", "hooks"):
                 self.assertFalse((plugin / name).exists(), name)
             self.assertFalse((output / ".agents").exists())
             self.assertEqual({path.name for path in (plugin / "skills").iterdir()}, {
@@ -76,6 +112,8 @@ class PublicSubmissionTests(unittest.TestCase):
                     for path in plugin.rglob("*") if path.is_file()
                 })
                 self.assertIn(".codex-plugin/plugin.json", archive.namelist())
+                for name in ("plugin.json", "mcp.json", ".mcp.json"):
+                    self.assertEqual(archive.read(name), (plugin / name).read_bytes())
                 self.assertIn("skills/flowlines-cohort-builder/references/cohort-rules.md", archive.namelist())
                 for name in archive.namelist():
                     self.assertNotIn("asdk_app_", archive.read(name).decode("utf-8", errors="ignore"))
@@ -147,8 +185,8 @@ class PublicSubmissionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             source = root / "source"
-            (source / ".codex-plugin").mkdir(parents=True)
-            shutil.copy2(SOURCE / ".codex-plugin/plugin.json", source / ".codex-plugin/plugin.json")
+            source.mkdir()
+            shutil.copy2(SOURCE / "plugin.json", source / "plugin.json")
             (source / "assets").mkdir()
             (source / "assets/logo.png").write_bytes(b"broken image")
             with patch("build_public_submission.SOURCE", source):

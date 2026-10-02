@@ -31,8 +31,8 @@ The initial public bundle contains:
 
 These skills use hosted tools and shared resources. MCP server instrumentation
 is the hosted `onboard` tool, and local diagnostics remain available through the
-existing desktop marketplace. That marketplace and its `.mcp.json` integration
-are preserved for existing Claude Code and Codex users.
+existing desktop marketplace. The source package uses portable `plugin.json`
+and `mcp.json`, with compatibility manifests and `.mcp.json` for existing clients.
 
 ## Prepare the public submission
 
@@ -47,7 +47,10 @@ Use Python 3.9 or newer and a new output directory. The build creates:
 ```text
 dist/openai/
   flowlines/
+    plugin.json
+    mcp.json
     .codex-plugin/plugin.json
+    .mcp.json
     assets/logo.png
     skills/
     LICENSE
@@ -56,11 +59,12 @@ dist/openai/
   chatgpt.md
 ```
 
-The archive contains the listing and skills portion of the submission. It
-contains no `.app.json`, personal app ID, desktop MCP declaration, or marketplace.
-It is not a connected plugin installer on its own. In the **same With MCP draft**,
-submit the production MCP URL, configure OAuth, and add the skills and listing
-assets. Do not create a second skills-only listing.
+The archive contains the portable manifest, the production MCP endpoint, four
+analysis skills, and listing assets. It also includes compatibility manifests
+for older clients. It contains no `.app.json`, personal app ID, hooks, or
+marketplace. In one **With MCP** draft, upload this ZIP and review the imported
+endpoint, skills, and listing. Complete OAuth setup and the review materials in
+that draft. Do not create a second skills-only listing.
 
 Use the [submission worksheet and review cases](openai-submission.md). The portal
 must accept the uploaded skills, pass its scans, and bind the MCP tools before
@@ -74,9 +78,12 @@ python3 -m unittest discover -s scripts -p 'test_public_submission.py'
 scripts/validate_plugins.sh
 ```
 
-The CLI check installs the skills portion in a temporary validation marketplace
-and confirms that it registers no desktop MCP server. This validates the local
-package shape, not portal acceptance or the final connected public plugin.
+The CLI check installs the public package in a temporary validation marketplace
+and confirms that it registers exactly one MCP server at the production URL.
+It then removes that install and checks the repo plugin in the same way. The
+unit tests check that portable and compatibility metadata match. These offline
+checks validate package structure and registration; OAuth, portal acceptance,
+and live tool calls still need separate verification.
 
 ## Test the MCP connection during development
 
@@ -122,6 +129,7 @@ fix is included here.
 ## References
 
 - [Plugin architecture and the shared directory](https://developers.openai.com/plugins/concepts/plugins)
+- [Package your plugin](https://developers.openai.com/plugins/build/plugins)
 - [Public submission](https://developers.openai.com/plugins/deploy/submission)
 - [Move an existing remote MCP plugin into one submission](https://developers.openai.com/plugins/guides/submit-claude-plugin)
 - [Developer mode](https://developers.openai.com/api/docs/guides/developer-mode)

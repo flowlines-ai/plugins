@@ -1,22 +1,22 @@
 # Flowlines plugins
 
-Official [Flowlines](https://flowlines.ai) plugins for coding agents. One repository serves as a plugin marketplace for both **Claude Code** and **Codex CLI**, and ships the `flowlines` plugin:
+Official [Flowlines](https://flowlines.ai) plugins for MCP observability. This repository ships the portable `flowlines` plugin and marketplaces for **Claude Code** and **Codex**:
 
 | Component | What it does |
 |---|---|
-| `flowlines` MCP server | Connects your agent to your Flowlines workspace at `https://api.flowlines.ai/mcp`. Ask what your agents' users did, what changed since a release, where sessions go wrong, and record findings as notes. Its `onboard` tool gives your agent the plan to instrument your own MCP server and checks the telemetry that arrives. |
+| `flowlines` MCP server | Connects your MCP client to your Flowlines workspace at `https://api.flowlines.ai/mcp`. Inspect how people use your MCP servers, what changed since a release, and where sessions go wrong. Record findings as notes. Its `onboard` tool returns a plan to instrument your MCP server and checks the telemetry that arrives. |
 | `flowlines-weekly-review` skill | A periodic review over the MCP server: what changed since the last review, signals, outcome movements, and what to pin for next time. |
-| `flowlines-release-check` skill | Before-and-after comparison of an agent release: outcomes, intents, cost, signals, and evidence sessions, with the right denominators. |
+| `flowlines-release-check` skill | Before-and-after comparison of an MCP server release: outcomes, intents, cost, signals, and evidence sessions, with the right denominators. |
 | `flowlines-investigate-session` skill | From a signal, a user, or a complaint to the failing turn, with minimal exposure of end-user content. |
 | `flowlines-cohort-builder` skill | Sizes a user segment, writes it in the Flowlines cohort rule vocabulary, and compares it against a baseline. |
 | `flowlines-doctor` skill | Diagnoses missing or incomplete data across every source: instrumented MCP servers, LangSmith and Langfuse connectors, and OTLP applications. |
 
 ## Privacy notice
 
-- The MCP server reads production conversations between end users and your agents. Treat everything it returns as confidential; it never writes to your namespace except through the explicit `save_note` and `report_outcome` tools.
+- The Flowlines MCP server reads production MCP sessions, tool calls, and user activity. Treat everything it returns as confidential; it never writes to your namespace except through the explicit `save_note` and `report_outcome` tools.
 - An MCP server instrumented from the `onboard` plan exports validated tool arguments, client-visible results, and user identity metadata to Flowlines. That data can contain personal data, customer data, source code, or other sensitive content. You choose what it records on the Flowlines get-started page.
 
-`onboard` is read-only: it returns a plan for your agent to carry out and checks the calls that arrive. The namespace API key is created on the Flowlines get-started page and shown once there; never paste it into chat.
+`onboard` is read-only: it returns an instrumentation plan and checks the calls that arrive. The namespace API key is created on the Flowlines get-started page and shown once there; never paste it into chat.
 
 ## Install
 
@@ -42,6 +42,14 @@ claude plugin marketplace add flowlines-ai/plugins && claude plugin install flow
 
 Then run `/mcp` inside Claude Code and sign in to `flowlines`. Skills are available as `/flowlines:<skill-name>`, for example `/flowlines:flowlines-weekly-review` or `/flowlines:flowlines-doctor`. Add `--scope project` to the install command to enable the plugin for one repository only.
 
+### Local desktop testing
+
+Open this repository in the ChatGPT desktop app and restart the app after
+package changes. In the Plugins Directory, select the **Flowlines** marketplace
+and install `flowlines`. The repo catalog at `.agents/plugins/marketplace.json`
+points to `plugins/flowlines`. Complete the MCP sign-in and test in a new chat.
+Local marketplace support can vary by surface; this does not publish the plugin.
+
 ### Codex CLI
 
 ```sh
@@ -54,7 +62,7 @@ The plugin registers an MCP server named `flowlines`. If you previously added th
 
 ### After you sign in
 
-Signing in also creates your Flowlines account. When you have no workspace or API key yet, the Flowlines get-started page creates them, then turns green on your server's first tool call. To instrument your MCP server, ask your agent to onboard you to Flowlines: it calls `onboard` for your namespace, carries out the plan, and verifies the first calls with `onboard` and action `check`.
+Signing in also creates your Flowlines account. When you have no workspace or API key yet, the Flowlines get-started page creates them, then turns green on your server's first tool call. To instrument your MCP server, ask your MCP client to onboard you to Flowlines: it calls `onboard` for your namespace, carries out the plan, and verifies the first calls with `onboard` and action `check`.
 
 ### MCP connection errors
 
@@ -89,9 +97,11 @@ Codex reads a repository-level marketplace from `.agents/plugins/marketplace.jso
       "source": {
         "source": "git-subdir",
         "url": "https://github.com/flowlines-ai/plugins.git",
-        "path": "plugins/flowlines"
+        "path": "./plugins/flowlines",
+        "ref": "main"
       },
-      "policy": { "installation": "INSTALLED_BY_DEFAULT", "authentication": "ON_USE" }
+      "policy": { "installation": "INSTALLED_BY_DEFAULT", "authentication": "ON_USE" },
+      "category": "Developer Tools"
     }
   ]
 }
@@ -115,13 +125,22 @@ Start new Claude Code and Codex sessions to apply the changes.
 .claude-plugin/marketplace.json     Claude Code marketplace
 .agents/plugins/marketplace.json    Codex marketplace
 plugins/flowlines/
+  plugin.json                       Portable identity and OpenAI listing metadata
+  mcp.json                          Portable MCP server (streamable-http)
   .claude-plugin/plugin.json        Claude Code manifest
-  .codex-plugin/plugin.json         Codex manifest and directory listing
-  .mcp.json                         MCP server shared by both clients
-  skills/                           Skills shared by both clients
+  .codex-plugin/plugin.json         Codex compatibility manifest
+  .mcp.json                         Compatibility MCP server (http)
+  assets/                           Shared icons
+  skills/                           Shared skills
 ```
 
-Both clients read the same `.mcp.json` and `skills/` tree. Each client keeps its own manifest because Claude Code only reads `.claude-plugin/plugin.json` and Codex adds directory metadata under `interface`.
+The portable package follows [OpenAI's packaging guide](https://developers.openai.com/plugins/build/plugins).
+Hosts discover `skills/` and `mcp.json` at the plugin root. OpenAI listing fields
+live under `extensions.com.openai.interface` in `plugin.json`. That extension
+replaces the compatibility overlay; the two are not merged. Keep identity,
+listing fields, versions, and MCP endpoints in sync with the compatibility files.
+The tests check these values. Existing clients can still use their original
+manifests and `.mcp.json`.
 
 ## Development
 
@@ -130,15 +149,20 @@ Validate the manifests with the real CLIs, then the skill packages:
 ```sh
 scripts/validate_plugins.sh
 python3 scripts/validate_skills.py
+python3 -m unittest discover -s scripts -p 'test_public_submission.py'
 ```
 
-`validate_plugins.sh` needs `claude` and `codex` on your `PATH`. It runs offline: Claude validates the manifests and Codex installs the plugin from this checkout into a throwaway `CODEX_HOME`.
+`validate_plugins.sh` needs `claude` and `codex` on your `PATH`. It runs offline:
+Claude validates the manifests, and Codex installs the public bundle and repo
+plugin separately in a temporary home. Each install must register exactly one
+MCP server at `https://api.flowlines.ai/mcp`. These checks do not complete OAuth
+or call the server.
 
 To try the plugin from a checkout without installing it, run `claude --plugin-dir plugins/flowlines`, or add this directory as a local marketplace with `codex plugin marketplace add .`.
 
 ## Releasing
 
-1. Bump `version` in `plugins/flowlines/.claude-plugin/plugin.json`, `plugins/flowlines/.codex-plugin/plugin.json`, and the plugin entry in `.claude-plugin/marketplace.json`.
+1. Bump `version` in `plugins/flowlines/plugin.json`, `plugins/flowlines/.claude-plugin/plugin.json`, `plugins/flowlines/.codex-plugin/plugin.json`, and the plugin entry in `.claude-plugin/marketplace.json`.
 2. Merge to `main`. Marketplace installs track `main`; users pick up the new version with `claude plugin update flowlines@flowlines` or `codex plugin marketplace upgrade`.
 3. Tag the release with `claude plugin tag plugins/flowlines`.
 
