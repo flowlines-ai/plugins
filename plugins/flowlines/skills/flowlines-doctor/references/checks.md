@@ -30,14 +30,14 @@ An accepted or bad-request status with the key (`2xx` or `400`) means the key au
 Set up from the plan of the Flowlines MCP `onboard` tool. `onboard` with action `check` checks the plan's test session, or the recent calls, and names a fix for each failing check.
 
 1. Deployment variables: `OTEL_EXPORTER_OTLP_ENDPOINT` (the base URL), `OTEL_EXPORTER_OTLP_HEADERS` with the key from a secret, and `OTEL_SERVICE_NAME`. With AGNTCY Observe, `OBSERVE_HEADERS` must mirror the header value. Confirm they are present in the running process's environment, not only in a template.
-2. Emit ten tool calls carrying `reason`, `user_intent`, `session.id`, and a test `user.id`, then one `report_outcome` call.
+2. Emit ten tool calls carrying `reason`, one `user_intent`, and a test `user.id`, then one `report_outcome` call. They need no `session.id`: Flowlines groups calls with the same `user.id` and `user_intent` into one session.
 3. Read the ingestion health with `get_mcp_overview` (`range` `30d`). When the server does not offer that tool, read it on the MCP page of the Flowlines app, or ask the user to. The status is derived from a durable ledger of every MCP-shaped batch:
    - **Healthy**: telemetry arrives and every accepted call was indexed within five minutes.
    - **Delayed**: accepted calls have stayed unindexed for five minutes; a Flowlines processing delay, not a client problem. Wait and re-check.
    - **Degraded**: batches arrive but no canonical call is accepted and quality issues explain why. Read the issue codes on the MCP page of the app; they name the missing or malformed attribute. Fix the emitter contract.
    - **Inactive**: no MCP-shaped batch arrived in the range. The exporter, collector, or key is wrong, or the server is not being called.
    - **Unavailable**: Flowlines cannot read ingestion accounting; a Flowlines-side outage, retry later.
-4. Calls without `reason` are visible but excluded from behavioural analysis. Calls without `user_intent` report a `missing_user_intent` quality issue. Calls without a client or transport `session.id` are not associated with a session and are excluded from tool-loop detection.
+4. Calls without `reason` are visible but excluded from behavioural analysis. Calls without `user_intent` report a `missing_user_intent` quality issue. A client `session.id` is optional, and Flowlines never uses the transport session (`Mcp-Session-Id`) as one. Calls without a client `session.id` join a session inferred from `user.id` and `user_intent`; calls that also lack either of these are not associated with a session and are excluded from tool-loop detection.
 5. Paused servers: Settings, MCP lists every observed server with an enabled toggle. A paused server keeps accepting raw traces but stops call facts, session turns, signal discovery, and behavioural analysis for that server.
 6. Behavioural clustering needs at least 20 valid-reason calls and three distinct normalised reasons before anything appears, and the semantic map is a fixed 28-day snapshot. Their absence right after setup is not an ingestion failure.
 
