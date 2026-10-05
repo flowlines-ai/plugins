@@ -4,7 +4,7 @@ Official [Flowlines](https://flowlines.ai) plugins for MCP observability. This r
 
 | Component | What it does |
 |---|---|
-| `flowlines` MCP server | Connects your MCP client to your Flowlines workspace at `https://api.flowlines.ai/mcp`. Inspect how people use your MCP servers, what changed since a release, and where sessions go wrong. Record findings as notes. Its `onboard` tool returns a plan to instrument your MCP server and checks the telemetry that arrives. |
+| `flowlines` MCP server | Connects your MCP client to your Flowlines workspace at `https://api.flowlines.ai/mcp`. Inspect how people use your MCP servers, what changed since a release, and where sessions go wrong. Record findings as notes. Its `onboarding` tool returns an instrumentation plan; `check_onboarding` checks the telemetry that arrives. |
 | `flowlines-weekly-review` skill | A periodic review over the MCP server: what changed since the last review, signals, outcome movements, and what to pin for next time. |
 | `flowlines-release-check` skill | Before-and-after comparison of an MCP server release: outcomes, intents, cost, signals, and evidence sessions, with the right denominators. |
 | `flowlines-investigate-session` skill | From a signal, a user, or a complaint to the failing turn, with minimal exposure of end-user content. |
@@ -14,9 +14,9 @@ Official [Flowlines](https://flowlines.ai) plugins for MCP observability. This r
 ## Privacy notice
 
 - The Flowlines MCP server reads production MCP sessions, tool calls, and user activity. Treat everything it returns as confidential; it never writes to your namespace except through the explicit `save_note` and `report_outcome` tools.
-- An MCP server instrumented from the `onboard` plan exports validated tool arguments, client-visible results, and user identity metadata to Flowlines. That data can contain personal data, customer data, source code, or other sensitive content. You choose what it records on the Flowlines get-started page.
+- An MCP server instrumented from the `onboarding` plan exports validated tool arguments, client-visible results, and user identity metadata to Flowlines. That data can contain personal data, customer data, source code, or other sensitive content. You choose what it records on the Flowlines get-started page.
 
-`onboard` is read-only: it returns an instrumentation plan and checks the calls that arrive. The namespace API key is created on the Flowlines get-started page and shown once there; never paste it into chat.
+`onboarding` and `check_onboarding` are read-only: they return an instrumentation plan and check the calls that arrive. The namespace API key is created on the Flowlines get-started page and shown once there; never paste it into chat.
 
 ## Install
 
@@ -62,7 +62,7 @@ The plugin registers an MCP server named `flowlines`. If you previously added th
 
 ### After you sign in
 
-Signing in also creates your Flowlines account. When you have no workspace or API key yet, the Flowlines get-started page creates them, then turns green on your server's first tool call. To instrument your MCP server, ask your MCP client to onboard you to Flowlines: it calls `onboard` for your namespace, carries out the plan, and verifies the first calls with `onboard` and action `check`.
+Signing in also creates your Flowlines account. When you have no workspace or API key yet, the Flowlines get-started page creates them, then turns green on your server's first tool call. To instrument your MCP server, ask your MCP client to onboard you to Flowlines: it calls `onboarding` for your namespace, carries out the plan, and verifies the first calls with `check_onboarding`.
 
 ### MCP connection errors
 
@@ -161,6 +161,10 @@ or call the server.
 To try the plugin from a checkout without installing it, run `claude --plugin-dir plugins/flowlines`, or add this directory as a local marketplace with `codex plugin marketplace add .`.
 
 ## Releasing
+
+Plugin 0.5.0 uses the `onboarding` and `check_onboarding` tools from MCP server 2.0.0.
+Deploy that server version before releasing this plugin. The old `onboard` tool is retired;
+the user-invoked MCP prompt named `onboard` remains available.
 
 1. Bump `version` in `plugins/flowlines/plugin.json`, `plugins/flowlines/.claude-plugin/plugin.json`, `plugins/flowlines/.codex-plugin/plugin.json`, and the plugin entry in `.claude-plugin/marketplace.json`.
 2. Merge to `main`. Marketplace installs track `main`; users pick up the new version with `claude plugin update flowlines@flowlines` or `codex plugin marketplace upgrade`.

@@ -27,10 +27,10 @@ An accepted or bad-request status with the key (`2xx` or `400`) means the key au
 
 ## Instrumented MCP server
 
-Set up from the plan of the Flowlines MCP `onboard` tool. `onboard` with action `check` checks the plan's test session, or the recent calls, and names a fix for each failing check.
+Set up from the plan of the Flowlines MCP `onboarding` tool. `check_onboarding` checks the plan's test session, or the recent calls, and names a fix for each failing check.
 
 1. Deployment variables: `OTEL_EXPORTER_OTLP_ENDPOINT` (the base URL), `OTEL_EXPORTER_OTLP_HEADERS` with the key from a secret, and `OTEL_SERVICE_NAME`. With AGNTCY Observe, `OBSERVE_HEADERS` must mirror the header value. Confirm they are present in the running process's environment, not only in a template.
-2. Emit ten tool calls carrying `reason`, one `user_intent`, and a test `user.id`, then one `report_outcome` call. They need no `session.id`: Flowlines groups calls with the same `user.id` and `user_intent` into one session.
+2. Follow the current plan's test calls and verification marker, then call `check_onboarding` with its `verification.verificationId`. Use the plan's success and failure cases, and `report_outcome` when enabled. When `user_intent` is enabled, calls with the same `user.id` and marked `user_intent` need no `session.id`; otherwise use the plan's session marker.
 3. Read the ingestion health with `get_mcp_overview` (`range` `30d`). When the server does not offer that tool, read it on the MCP page of the Flowlines app, or ask the user to. The status is derived from a durable ledger of every MCP-shaped batch:
    - **Healthy**: telemetry arrives and every accepted call was indexed within five minutes.
    - **Delayed**: accepted calls have stayed unindexed for five minutes; a Flowlines processing delay, not a client problem. Wait and re-check.
