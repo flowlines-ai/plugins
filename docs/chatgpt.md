@@ -29,9 +29,9 @@ The initial public bundle contains:
 - `flowlines-investigate-session`
 - `flowlines-cohort-builder`
 
-These skills use hosted tools and shared resources. MCP server instrumentation
-is the hosted `onboard` tool, and local diagnostics remain available through the
-existing desktop marketplace. The source package uses portable `plugin.json`
+These skills use hosted tools and shared resources. The hosted `onboarding` tool
+returns an instrumentation plan, and `check_onboarding` verifies received telemetry.
+Local diagnostics remain available through the existing desktop marketplace. The source package uses portable `plugin.json`
 and `mcp.json`, with compatibility manifests and `.mcp.json` for existing clients.
 
 ## Prepare the public submission

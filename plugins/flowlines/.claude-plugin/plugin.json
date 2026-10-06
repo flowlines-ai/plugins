@@ -1,7 +1,7 @@
 {
   "name": "flowlines",
   "displayName": "Flowlines",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "Flowlines MCP observability: analyse MCP server usage, investigate sessions, and instrument MCP servers.",
   "author": { "name": "Flowlines", "email": "support@flowlines.ai", "url": "https://flowlines.ai" },
   "homepage": "https://flowlines.ai",
