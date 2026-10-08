@@ -1,0 +1,13 @@
+{
+  "name": "flowlines",
+  "displayName": "Flowlines",
+  "version": "0.5.0",
+  "description": "Flowlines MCP observability: analyse MCP server usage, investigate sessions, and instrument MCP servers.",
+  "author": { "name": "Flowlines", "email": "support@flowlines.ai" },
+  "homepage": "https://flowlines.ai",
+  "repository": "https://github.com/flowlines-ai/plugins",
+  "license": "MIT",
+  "logo": "assets/logo.png",
+  "keywords": ["flowlines", "observability", "mcp", "telemetry", "opentelemetry", "analytics"],
+  "mcpServers": "./.mcp.json"
+}
