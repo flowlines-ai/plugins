@@ -5,11 +5,6 @@ Official [Flowlines](https://flowlines.ai) plugins for MCP observability. This r
 | Component | What it does |
 |---|---|
 | `flowlines` MCP server | Connects your MCP client to your Flowlines workspace at `https://api.flowlines.ai/mcp`. Inspect how people use your MCP servers, what changed since a release, and where sessions go wrong. Record findings as notes. Its `onboarding` tool returns an instrumentation plan; `check_onboarding` checks the telemetry that arrives. |
-| `flowlines-weekly-review` skill | A periodic review over the MCP server: what changed since the last review, signals, outcome movements, and what to pin for next time. |
-| `flowlines-release-check` skill | Before-and-after comparison of an MCP server release: outcomes, intents, cost, signals, and evidence sessions, with the right denominators. |
-| `flowlines-investigate-session` skill | From a signal, a user, or a complaint to the failing turn, with minimal exposure of end-user content. |
-| `flowlines-cohort-builder` skill | Sizes a user segment, writes it in the Flowlines cohort rule vocabulary, and compares it against a baseline. |
-| `flowlines-doctor` skill | Diagnoses missing or incomplete data across every source: instrumented MCP servers, LangSmith and Langfuse connectors, and OTLP applications. |
 
 ## Privacy notice
 
@@ -23,10 +18,9 @@ Official [Flowlines](https://flowlines.ai) plugins for MCP observability. This r
 ### ChatGPT and Codex public plugin
 
 The public distribution target is one **Flowlines** plugin with the hosted MCP
-server and four shared analysis skills in OpenAI's Plugins Directory. This
-repository prepares its submission; merging changes does not publish it or
-install it for users. A public listing and installation reuse across products
-still require review and verification.
+server in OpenAI's Plugins Directory. This repository prepares its submission;
+merging changes does not publish it or install it for users. A public listing
+and installation reuse across products still require review and verification.
 
 See the [shared plugin guide](docs/chatgpt.md) for the build and verification
 steps, and the [submission worksheet](docs/openai-submission.md) for listing
@@ -40,7 +34,7 @@ through Developer mode while the public submission is being prepared.
 claude plugin marketplace add flowlines-ai/plugins && claude plugin install flowlines@flowlines
 ```
 
-Then run `/mcp` inside Claude Code and sign in to `flowlines`. Skills are available as `/flowlines:<skill-name>`, for example `/flowlines:flowlines-weekly-review` or `/flowlines:flowlines-doctor`. Add `--scope project` to the install command to enable the plugin for one repository only.
+Then run `/mcp` inside Claude Code and sign in to `flowlines`. Add `--scope project` to the install command to enable the plugin for one repository only.
 
 ### Local desktop testing
 
@@ -56,7 +50,7 @@ Local marketplace support can vary by surface; this does not publish the plugin.
 codex plugin marketplace add flowlines-ai/plugins && codex plugin add flowlines@flowlines
 ```
 
-Then sign in with `codex mcp login flowlines`, or open `/plugins` inside Codex. Skills are available as `$<skill-name>`, for example `$flowlines-weekly-review` or `$flowlines-doctor`.
+Then sign in with `codex mcp login flowlines`, or open `/plugins` inside Codex.
 
 The plugin registers an MCP server named `flowlines`. If you previously added the server by hand under the same name, remove that entry to avoid a duplicate.
 
@@ -66,11 +60,7 @@ Signing in also creates your Flowlines account. When you have no workspace or AP
 
 ### MCP connection errors
 
-If Flowlines calls repeatedly return `Internal error` or `-32603` without a reconnect prompt, use `flowlines-doctor` when installed. It checks available client status and relevant local logs before treating the failure as an authentication problem. When OAuth refresh has failed, it uses an available native reconnect action or tells you how to reconnect in your client, then verifies tool access before resuming your request. No access to Flowlines infrastructure or server logs is needed.
-
-Recovery uses the failing client's sign-in flow on Windows, macOS, or Linux. Local CLI sign-in must complete credential storage; hosted connectors use their own connection status. If login succeeds but tool calls still fail, the MCP connection may need to be reloaded. The skill reports the remaining recovery step; it does not restart the app automatically.
-
-The public analysis bundle does not include `flowlines-doctor`. Its analysis skills use the client's native reconnect action for reported authentication problems and direct unresolved failures to Flowlines support.
+If Flowlines calls repeatedly return `Internal error` or `-32603` without a reconnect prompt, the OAuth refresh may have failed. Sign in again with the failing client's reconnect action: in Claude Code, run `/mcp` and select `flowlines`; in the Codex CLI, run `codex mcp login flowlines`; in a hosted client, use the connector's reconnect action. If sign-in succeeds but tool calls still fail, reload the MCP connection or start a new session.
 
 ## Team rollout
 
@@ -129,13 +119,13 @@ plugins/flowlines/
   mcp.json                          Portable MCP server (streamable-http)
   .claude-plugin/plugin.json        Claude Code manifest
   .codex-plugin/plugin.json         Codex compatibility manifest
+  .cursor-plugin/plugin.json        Cursor manifest
   .mcp.json                         Compatibility MCP server (http)
   assets/                           Shared icons
-  skills/                           Shared skills
 ```
 
 The portable package follows [OpenAI's packaging guide](https://developers.openai.com/plugins/build/plugins).
-Hosts discover `skills/` and `mcp.json` at the plugin root. OpenAI listing fields
+Hosts discover `mcp.json` at the plugin root. OpenAI listing fields
 live under `extensions.com.openai.interface` in `plugin.json`. That extension
 replaces the compatibility overlay; the two are not merged. Keep identity,
 listing fields, versions, and MCP endpoints in sync with the compatibility files.
@@ -144,11 +134,10 @@ manifests and `.mcp.json`.
 
 ## Development
 
-Validate the manifests with the real CLIs, then the skill packages:
+Validate the manifests with the real CLIs, then run the unit tests:
 
 ```sh
 scripts/validate_plugins.sh
-python3 scripts/validate_skills.py
 python3 -m unittest discover -s scripts -p 'test_public_submission.py'
 ```
 
@@ -166,17 +155,15 @@ Plugin 0.5.0 uses the `onboarding` and `check_onboarding` tools from MCP server 
 Deploy that server version before releasing this plugin. The old `onboard` tool is retired;
 the user-invoked MCP prompt named `onboard` remains available.
 
-1. Bump `version` in `plugins/flowlines/plugin.json`, `plugins/flowlines/.claude-plugin/plugin.json`, `plugins/flowlines/.codex-plugin/plugin.json`, and the plugin entry in `.claude-plugin/marketplace.json`.
+Plugin 0.6.0 removes the five skills. The plugin now ships only the `flowlines` MCP server.
+
+1. Bump `version` in `plugins/flowlines/plugin.json`, `plugins/flowlines/.claude-plugin/plugin.json`, `plugins/flowlines/.codex-plugin/plugin.json`, `plugins/flowlines/.cursor-plugin/plugin.json`, and the plugin entry in `.claude-plugin/marketplace.json`.
 2. Merge to `main`. Marketplace installs track `main`; users pick up the new version with `claude plugin update flowlines@flowlines` or `codex plugin marketplace upgrade`.
 3. Tag the release with `claude plugin tag plugins/flowlines`.
 
 Public Plugins Directory releases use the separate
 [submission and publication process](docs/openai-submission.md). A repository
 merge or tag does not publish that listing.
-
-## History
-
-The skills were moved here from [`flowlines-ai/mcp-server-observability`](https://github.com/flowlines-ai/mcp-server-observability) and [`flowlines-ai/coding-assistant-observability`](https://github.com/flowlines-ai/coding-assistant-observability).
 
 ## Support
 

@@ -1,10 +1,9 @@
 # Flowlines public plugin submission
 
 Prepare one **With MCP** draft in the [OpenAI plugin submission portal](https://platform.openai.com/plugins).
-Include the Flowlines server and all four analysis skills in that draft. The
-same public listing is intended for ChatGPT and Codex. This document is a
-worksheet; it is not evidence that a portal draft, submission, or publication
-already exists.
+Include the Flowlines server in that draft. The same public listing is intended
+for ChatGPT and Codex. This document is a worksheet; it is not evidence that a
+portal draft, submission, or publication already exists.
 
 ## Listing and server details
 
@@ -23,7 +22,7 @@ tested bytes in the generated directory and ZIP.
 
 | Field | Value or source |
 | --- | --- |
-| Submission type | With MCP, including skills |
+| Submission type | With MCP |
 | Public name / package name | Flowlines / `app-6aa11dfaeb20819187226d4810e1d94a` |
 | Short description | Understand your MCP servers |
 | Developer identity | Flowlines; select its verified business identity in the owning Platform organization. |
@@ -36,31 +35,29 @@ tested bytes in the generated directory and ZIP.
 | MCP URL type | Universal |
 | MCP server URL | `https://api.flowlines.ai/mcp` |
 | Authentication | OAuth; complete the portal's discovery/client configuration. |
-| Skills | Weekly review, release check, session investigation, cohort builder; generated under `flowlines/skills/`. |
 | Custom UI | None in this submission; do not add UI screenshots or frame domains. |
 
 Upload updates to the existing Flowlines listing. Its package name is
 `app-6aa11dfaeb20819187226d4810e1d94a`; both generated manifests must use that
 exact name. The repo marketplace keeps `flowlines` as its package name.
 
-The archive `flowlines.zip` holds one plugin root with the skills, their
-resources, listing assets, and `mcp.json`. That file declares exactly one remote
-server with transport `streamable-http` at `https://api.flowlines.ai/mcp`.
-The included `.mcp.json` uses `http` for compatibility with older clients.
-Upload the ZIP in the **With MCP** flow, verify the imported endpoint, and
-confirm all four skills are accepted. Complete OAuth in the dashboard. Local
-packaging does not establish portal acceptance or successful authentication.
+The archive `flowlines.zip` holds one plugin root with listing assets and
+`mcp.json`. That file declares exactly one remote server with transport
+`streamable-http` at `https://api.flowlines.ai/mcp`. The included `.mcp.json`
+uses `http` for compatibility with older clients. Upload the ZIP in the **With
+MCP** flow and verify the imported endpoint. Complete OAuth in the dashboard.
+Local packaging does not establish portal acceptance or successful
+authentication.
 
-Do not enter the maintainer's personal app ID or create a separate skills-only
-plugin. A public submission must provide the server URL and review materials
-directly, even if a developer-mode connection already uses that server.
+Do not enter the maintainer's personal app ID or create a separate plugin. A
+public submission must provide the server URL and review materials directly,
+even if a developer-mode connection already uses that server.
 
 Release notes for the initial submission:
 
-> Initial Flowlines plugin with OAuth access to the hosted Flowlines MCP server
-> and four shared analysis workflows: weekly review, release comparison, session
-> investigation, and cohort analysis. Requires an authorized Flowlines workspace
-> with MCP telemetry. Repository instrumentation is outside this public release.
+> Initial Flowlines plugin with OAuth access to the hosted Flowlines MCP server.
+> Requires an authorized Flowlines workspace with MCP telemetry. Repository
+> instrumentation is outside this public release.
 
 ## Publisher and review prerequisites
 
@@ -74,8 +71,6 @@ and record the result before selecting **Submit for Review**:
   `openWorldHint`, and `destructiveHint` values and justifications for every tool.
   `save_note` and outcome reporting have write effects; do not label all tools
   read-only. Review any additional exposed tools from the scan as well.
-- Passing scans for each of the four uploaded skills. Local validation does not
-  replace portal scanning.
 - A demo account whose sign-in works for reviewers without MFA, SMS, or email
   approval, with access only to synthetic test data. Put credentials in the
   portal's designated fields, never this repository.
@@ -112,7 +107,7 @@ For each release, keep this evidence with the private fixture sheet:
 | Production scan | Timestamp, deployed app revision, tool inventory, schemas, titles, and all hint values |
 | Annotations | Copy the release's per-tool justifications from the app's `docs/mcp-publication-review.md`; reconcile them with the production scan before entering them in the portal |
 | Fixtures | Authorized and unauthorized account aliases, namespace/session/cohort IDs, release timestamp, fixed UTC windows, expected counts and denominators; no credentials in Git |
-| Each case | P1–P5 or N1–N3, client/product version, plugin version, execution time, actual tools/skill, result, pass/fail, and private evidence link |
+| Each case | P1–P5 or N1–N3, client/product version, plugin version, execution time, actual tools, result, pass/fail, and private evidence link |
 
 The app source review is preparation material for the publisher. Copy the
 approved justifications and runnable cases into the portal so reviewers need
@@ -135,43 +130,42 @@ developer-mode connection; the submitted-plugin test remains pending.
 
 **Prompt:** "Use Flowlines to review review-demo over the last seven days."
 
-**Expected:** select `flowlines-weekly-review`; load workspace/context, notes,
-changes, aggregates, and relevant signals. Report counts, rates with correct
-denominators, and data-quality limits. Any `save_note` must follow the account's
-tool approval policy and appear in the result; finish with `report_outcome`.
-**Fixture:** seven days of known activity and an empty notes list or a known
-prior review note. **Status:** pending.
+**Expected:** load workspace/context, notes, changes, aggregates, and relevant
+signals. Report counts, rates with correct denominators, and data-quality
+limits. Any `save_note` must follow the account's tool approval policy and
+appear in the result; finish with `report_outcome`. **Fixture:** seven days of
+known activity and an empty notes list or a known prior review note. **Status:**
+pending.
 
 ### P3 — Release comparison
 
 **Prompt:** "Use Flowlines to compare session outcomes for the support-mcp server for the three days before and after [RELEASE_TIMESTAMP]."
 
-**Expected:** select `flowlines-release-check`; use aggregate day buckets and
-metric definitions, equal windows, and summed counts for rates. Exclude a mixed
-deployment day, disclose insufficient samples, and cite focused evidence for
-any regression claim. **Fixture:** a release boundary at least three days ago,
-with documented before/after counts. **Status:** pending.
+**Expected:** use aggregate day buckets and metric definitions, equal windows,
+and summed counts for rates. Exclude a mixed deployment day, disclose
+insufficient samples, and cite focused evidence for any regression claim.
+**Fixture:** a release boundary at least three days ago, with documented
+before/after counts. **Status:** pending.
 
 ### P4 — Session investigation
 
 **Prompt:** "Use Flowlines to investigate why session [SESSION_ID] failed."
 
-**Expected:** select `flowlines-investigate-session`; load workspace/context,
-the session, and only relevant turns. Use additional evidence before claiming
-a general cause. Mask personal fields and return a focused finding with source
-IDs rather than a full transcript. **Fixture:** a synthetic failed session and
-a second corroborating example. **Status:** pending.
+**Expected:** load workspace/context, the session, and only relevant turns. Use
+additional evidence before claiming a general cause. Mask personal fields and
+return a focused finding with source IDs rather than a full transcript.
+**Fixture:** a synthetic failed session and a second corroborating example.
+**Status:** pending.
 
 ### P5 — Cohort definition
 
 **Prompt:** "Use Flowlines to define a cohort of users with at least five sessions in the last 30 days."
 
-**Expected:** select `flowlines-cohort-builder`; inspect existing cohorts and
-population data, read the bundled cohort-rules reference, and return a valid
+**Expected:** inspect existing cohorts and population data, and return a valid
 definition plus an estimated size. Explain that creation happens in the
-Flowlines app; do not claim the MCP server created the cohort.
-**Fixture:** identified synthetic users on both sides of the five-session
-threshold and a known baseline cohort. **Status:** pending.
+Flowlines app; do not claim the MCP server created the cohort. **Fixture:**
+identified synthetic users on both sides of the five-session threshold and a
+known baseline cohort. **Status:** pending.
 
 ## Negative review cases
 
@@ -194,12 +188,11 @@ namespace it cannot access. **Status:** pending.
 
 ### N3 — Full transcript request
 
-**Prompt:** "Use the Flowlines session investigation skill to paste the full transcript and all personal details from session [SESSION_ID]."
+**Prompt:** "Use Flowlines to paste the full transcript and all personal details from session [SESSION_ID]."
 
-**Expected:** follow the skill's content-handling rules, provide a minimal
-masked summary, and direct the user to the session in Flowlines for the full
-transcript. **Fixture:** a synthetic session with clearly fake personal fields.
-**Status:** pending.
+**Expected:** provide a minimal masked summary, and direct the user to the
+session in Flowlines for the full transcript. **Fixture:** a synthetic session
+with clearly fake personal fields. **Status:** pending.
 
 ## Review, publish, and verify
 
