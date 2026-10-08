@@ -18,7 +18,19 @@ from zipfile import ZipFile
 
 from build_public_submission import ROOT, SOURCE, build
 from validate_branding import validate_logo
-from validate_skills import validate_relative_links, validate_skill
+
+
+def validate_relative_links(root: Path, path: Path, markdown: str) -> None:
+    root = root.resolve()
+    for raw_target in re.findall(r"\[[^\]]+\]\(([^)]+)\)", markdown):
+        target = raw_target.split("#", 1)[0]
+        if not target or "://" in target or target.startswith(("#", "mailto:")):
+            continue
+        resolved = (path.parent / target).resolve()
+        if resolved != root and root not in resolved.parents:
+            raise AssertionError(f"{path}: link escapes {root.name}: {raw_target}")
+        if not resolved.is_file():
+            raise AssertionError(f"{path}: missing linked resource: {raw_target}")
 
 
 def source_hashes() -> dict[str, str]:
@@ -41,7 +53,7 @@ class PublicSubmissionTests(unittest.TestCase):
         self.assertEqual(portable["extensions"]["com.openai"], {"interface": codex["interface"]})
         for key in ("skills", "mcpServers", "interface"):
             self.assertNotIn(key, portable)
-        self.assertEqual(codex["skills"], "./skills/")
+        self.assertNotIn("skills", codex)
         self.assertEqual(codex["mcpServers"], "./.mcp.json")
         self.assertEqual(claude["mcpServers"], "./.mcp.json")
         portable_mcp = json.loads((SOURCE / "mcp.json").read_text())
@@ -72,7 +84,7 @@ class PublicSubmissionTests(unittest.TestCase):
             portable = json.loads((plugin / "plugin.json").read_text())
             self.assertEqual(portable, {
                 "$schema": source_manifest["$schema"],
-                **{key: value for key, value in manifest.items() if key not in ("skills", "mcpServers", "interface")},
+                **{key: value for key, value in manifest.items() if key not in ("mcpServers", "interface")},
                 "extensions": {"com.openai": {"interface": manifest["interface"]}},
             })
             self.assertEqual(manifest["name"], "app-6aa11dfaeb20819187226d4810e1d94a")
@@ -90,25 +102,14 @@ class PublicSubmissionTests(unittest.TestCase):
                 self.assertEqual(source_manifest["extensions"]["com.openai"]["interface"][field], url)
                 self.assertEqual(manifest["interface"][field], url)
                 self.assertIn(f"| {label} | {url} |", (ROOT / "docs/openai-submission.md").read_text())
-            self.assertEqual(manifest["skills"], "./skills/")
             self.assertEqual(manifest["mcpServers"], "./.mcp.json")
             for name in ("mcp.json", ".mcp.json"):
                 self.assertEqual((plugin / name).read_bytes(), (SOURCE / name).read_bytes())
-            for key in ("apps", "hooks"):
+            for key in ("apps", "hooks", "skills"):
                 self.assertNotIn(key, manifest)
-            for name in (".app.json", ".claude-plugin", ".agents", "hooks"):
+            for name in (".app.json", ".claude-plugin", ".agents", "hooks", "skills"):
                 self.assertFalse((plugin / name).exists(), name)
             self.assertFalse((output / ".agents").exists())
-            self.assertEqual({path.name for path in (plugin / "skills").iterdir()}, {
-                "flowlines-weekly-review", "flowlines-release-check",
-                "flowlines-investigate-session", "flowlines-cohort-builder",
-            })
-            for skill in (plugin / "skills").iterdir():
-                validate_skill(skill)
-                for path in skill.rglob("*"):
-                    if path.is_file():
-                        source = SOURCE / "skills" / path.relative_to(plugin / "skills")
-                        self.assertEqual(path.read_bytes(), source.read_bytes())
             with ZipFile(output / "flowlines.zip") as archive:
                 self.assertIsNone(archive.testzip())
                 archived_manifest = json.loads(archive.read(".codex-plugin/plugin.json"))
@@ -121,7 +122,6 @@ class PublicSubmissionTests(unittest.TestCase):
                 self.assertIn(".codex-plugin/plugin.json", archive.namelist())
                 for name in ("plugin.json", "mcp.json", ".mcp.json"):
                     self.assertEqual(archive.read(name), (plugin / name).read_bytes())
-                self.assertIn("skills/flowlines-cohort-builder/references/cohort-rules.md", archive.namelist())
                 for name in archive.namelist():
                     self.assertNotIn("asdk_app_", archive.read(name).decode("utf-8", errors="ignore"))
             for name in ("openai-submission.md", "chatgpt.md"):
@@ -211,24 +211,6 @@ class PublicSubmissionTests(unittest.TestCase):
             self.assertEqual(existing.read_text(), "keep this file")
             self.assertFalse((output / "flowlines").exists())
 
-    def test_local_cache_files_are_not_packaged(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            source = root / "source"
-            shutil.copytree(SOURCE, source)
-            skill = source / "skills/flowlines-cohort-builder"
-            (skill / ".DS_Store").write_text("local metadata")
-            (skill / "__pycache__").mkdir()
-            (skill / "__pycache__/cached.pyc").write_bytes(b"cached bytecode")
-            (skill / "references/cached.pyc").write_bytes(b"cached bytecode")
-            with patch("build_public_submission.SOURCE", source):
-                archive = build(root / "output")
-            with ZipFile(archive) as bundle:
-                for name in bundle.namelist():
-                    self.assertNotIn(".DS_Store", name)
-                    self.assertNotIn("__pycache__", name)
-                    self.assertFalse(name.endswith(".pyc"), name)
-
     def test_failed_build_can_be_retried(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -241,8 +223,7 @@ class PublicSubmissionTests(unittest.TestCase):
             self.assertTrue(build(output).is_file())
 
     def test_review_cases_and_documentation_links(self) -> None:
-        for name in ("chatgpt.md", "openai-submission.md"):
-            path = ROOT / "docs" / name
+        for path in (ROOT / "README.md", ROOT / "docs/chatgpt.md", ROOT / "docs/openai-submission.md"):
             validate_relative_links(ROOT, path, path.read_text())
         worksheet = (ROOT / "docs/openai-submission.md").read_text()
         self.assertEqual(re.findall(r"^### P(\d+) —", worksheet, re.MULTILINE), list("12345"))

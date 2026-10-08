@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Package the hosted MCP server, analysis skills, and public Flowlines listing."""
+"""Package the hosted MCP server and public Flowlines listing."""
 
 from __future__ import annotations
 
@@ -16,12 +16,6 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "plugins" / "flowlines"
 # Existing public listing identity; the repo marketplace keeps the name flowlines.
 PUBLIC_PLUGIN_NAME = "app-6aa11dfaeb20819187226d4810e1d94a"
-ANALYSIS_SKILLS = (
-    "flowlines-weekly-review",
-    "flowlines-release-check",
-    "flowlines-investigate-session",
-    "flowlines-cohort-builder",
-)
 
 
 def build(output: Path) -> Path:
@@ -50,7 +44,6 @@ def write_submission(output: Path) -> None:
     manifest.update({
         "name": PUBLIC_PLUGIN_NAME,
         "description": "Review MCP server activity, compare releases, investigate sessions, and analyse user cohorts with Flowlines.",
-        "skills": "./skills/",
         "mcpServers": "./.mcp.json",
         "interface": {
             "displayName": "Flowlines",
@@ -78,7 +71,7 @@ def write_submission(output: Path) -> None:
     )
     portable_manifest = {
         "$schema": source_manifest["$schema"],
-        **{key: value for key, value in manifest.items() if key not in ("skills", "mcpServers", "interface")},
+        **{key: value for key, value in manifest.items() if key not in ("mcpServers", "interface")},
         "extensions": {"com.openai": {"interface": manifest["interface"]}},
     }
     (plugin / "plugin.json").write_text(
@@ -88,11 +81,6 @@ def write_submission(output: Path) -> None:
         shutil.copy2(SOURCE / name, plugin / name)
     (plugin / "assets").mkdir()
     shutil.copy2(SOURCE / "assets/logo.png", plugin / "assets/logo.png")
-    for skill in ANALYSIS_SKILLS:
-        shutil.copytree(
-            SOURCE / "skills" / skill, plugin / "skills" / skill,
-            ignore=shutil.ignore_patterns(".DS_Store", "__pycache__", "*.pyc"),
-        )
     shutil.copy2(ROOT / "LICENSE", plugin / "LICENSE")
     # The portal imports the remote endpoint; OAuth and review still need setup.
     with ZipFile(output / "flowlines.zip", "w", ZIP_DEFLATED) as archive:
@@ -112,7 +100,7 @@ def main() -> None:
     except (OSError, ValueError) as error:
         parser.exit(1, f"Cannot prepare public submission: {error}\n")
     print(f"Created {archive}")
-    print("Use one With MCP submission: review the included server, skills, and listing.")
+    print("Use one With MCP submission: review the included server and listing.")
     print("Complete OAuth and review setup in the portal. This build does not submit or publish.")
 
 

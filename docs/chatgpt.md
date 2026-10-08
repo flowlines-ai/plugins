@@ -1,7 +1,7 @@
 # Flowlines in ChatGPT and Codex
 
 The public distribution target is one **Flowlines** plugin with the hosted MCP
-server and four shared analysis skills. Publish it through OpenAI's **With MCP**
+server. Publish it through OpenAI's **With MCP**
 submission flow to the universal Plugins Directory shared by ChatGPT and Codex.
 The production server is `https://api.flowlines.ai/mcp`.
 
@@ -22,17 +22,10 @@ One public listing does not establish that a single install or OAuth grant
 automatically propagates to every device or CLI environment. Run the installation
 checks below before describing the experience as "install once".
 
-The initial public bundle contains:
-
-- `flowlines-weekly-review`
-- `flowlines-release-check`
-- `flowlines-investigate-session`
-- `flowlines-cohort-builder`
-
-These skills use hosted tools and shared resources. The hosted `onboarding` tool
-returns an instrumentation plan, and `check_onboarding` verifies received telemetry.
-Local diagnostics remain available through the existing desktop marketplace. The source package uses portable `plugin.json`
-and `mcp.json`, with compatibility manifests and `.mcp.json` for existing clients.
+The public bundle packages only the hosted MCP server. Its `onboarding` tool
+returns an instrumentation plan, and `check_onboarding` verifies received
+telemetry. The source package uses portable `plugin.json` and `mcp.json`, with
+compatibility manifests and `.mcp.json` for existing clients.
 
 ## Prepare the public submission
 
@@ -52,26 +45,25 @@ dist/openai/
     .codex-plugin/plugin.json
     .mcp.json
     assets/logo.png
-    skills/
     LICENSE
   flowlines.zip
   openai-submission.md
   chatgpt.md
 ```
 
-The archive contains the portable manifest, the production MCP endpoint, four
-analysis skills, and listing assets. It also includes compatibility manifests
+The archive contains the portable manifest, the production MCP endpoint, and
+listing assets. It also includes compatibility manifests
 for older clients. It contains no `.app.json`, personal app ID, hooks, or
 marketplace. Both generated manifests use the existing public package name
 `app-6aa11dfaeb20819187226d4810e1d94a`. The repo marketplace keeps `flowlines`.
 Upload this ZIP to the existing Flowlines listing and review the imported
-endpoint, skills, and listing. Complete OAuth setup and the review materials in
-that draft. Do not create a second skills-only listing.
+endpoint and listing. Complete OAuth setup and the review materials in
+that draft. Do not create a second listing.
 
 Use the [submission worksheet and review cases](openai-submission.md). The portal
-must accept the uploaded skills, pass its scans, and bind the MCP tools before
-the complete plugin can be verified. Rebuild after changes to the source skills
-or version; the build always reads the existing `plugins/flowlines` source.
+must pass its scans and bind the MCP tools before the complete plugin can be
+verified. Rebuild after changes to the source package or version; the build
+always reads the existing `plugins/flowlines` source.
 
 Offline checks:
 
@@ -98,7 +90,7 @@ with OAuth. Complete sign-in, then start a fresh web chat and select
 Ask it to use `get_workspace`, choose a namespace from the returned data, and
 call `get_context` for that namespace. Inspect both tool calls. The maintainer
 reported successful OAuth and this live query test on 2026-09-08. This result
-verifies the direct MCP connection, not the submitted skill bundle or install
+verifies the direct MCP connection, not the submitted plugin or install
 synchronization.
 
 ## Verify the complete public plugin
@@ -112,7 +104,7 @@ needs a clean test account or environment without the custom-marketplace plugin.
 | Install Flowlines in ChatGPT web and complete OAuth | Public listing ID, install steps, and successful `get_workspace` / `get_context` calls. |
 | Open ChatGPT desktop Chat/Work, then Codex in the desktop app | Whether Flowlines is already enabled; each additional install or sign-in action required; successful tool calls. |
 | Open a fresh Codex CLI session signed in to the same account | Availability of the same plugin, additional setup required, and successful tool calls. |
-| Select each of the four skills | Correct skill selection, resource access, and expected workflow output from the review cases. |
+| Run the positive review cases | Correct tool selection and expected workflow output from the review cases. |
 | Disconnect the service or use an account without access | Sign-in request or access error, with no invented or cross-account data. |
 | Upgrade an existing custom-marketplace user | Any duplicate listing or MCP server, which integration handles calls, and explicit migration steps if needed. |
 
