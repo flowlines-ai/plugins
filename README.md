@@ -1,6 +1,6 @@
 # Flowlines plugins
 
-Official [Flowlines](https://flowlines.ai) plugins for MCP observability. This repository ships the portable `flowlines` plugin and marketplaces for **Claude Code** and **Codex**:
+Official [Flowlines](https://flowlines.ai) plugins for MCP observability. This repository ships the portable `flowlines` plugin, marketplaces for **Claude Code** and **Codex**, and a **Cursor** plugin manifest (`plugins/flowlines/.cursor-plugin/plugin.json`) for [cursor.directory](https://cursor.directory/plugins):
 
 | Component | What it does |
 |---|---|
