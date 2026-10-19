@@ -1,6 +1,8 @@
 # Flowlines plugins
 
-Official [Flowlines](https://flowlines.ai) plugins for MCP observability. This repository ships the portable `flowlines` plugin, marketplaces for **Claude Code** and **Codex**, and a **Cursor** plugin manifest (`plugins/flowlines/.cursor-plugin/plugin.json`) for [cursor.directory](https://cursor.directory/plugins):
+Official [Flowlines](https://flowlines.ai) plugins for MCP observability. This repository ships the portable `flowlines` plugin, marketplaces for **Claude Code** and **Codex**, and a **Cursor** plugin manifest (`plugins/flowlines/.cursor-plugin/plugin.json`). Packaging does not by itself establish a public marketplace listing.
+
+**Start here:** [install and sign in](#install), then ask **“Onboard my MCP server to Flowlines.”** Review the plan, approve the changes, and ask **“Check my Flowlines onboarding and fix anything missing.”** See the [four onboarding steps](#onboard-your-mcp-server) or the [website setup guide](https://flowlines.ai/docs).
 
 | Component | What it does |
 |---|---|
@@ -22,17 +24,17 @@ Official [Flowlines](https://flowlines.ai) plugins for MCP observability. This r
 
 ### ChatGPT and Codex public plugin
 
-The public distribution target is one **Flowlines** plugin with the hosted MCP
-server and four shared analysis skills in OpenAI's Plugins Directory. This
-repository prepares its submission; merging changes does not publish it or
-install it for users. A public listing and installation reuse across products
-still require review and verification.
+[Flowlines is listed in OpenAI's Plugins Directory](https://chatgpt.com/plugins/plugin_asdk_app_6aa11dfaeb20819187226d4810e1d94a).
+As of 2026-10-19, the updated plugin has been submitted and is awaiting OpenAI
+approval. The live listing can still show the previous prompts and skills until
+that update is approved and published. A repository merge does not publish the
+directory update or migrate existing installations.
 
-See the [shared plugin guide](docs/chatgpt.md) for the build and verification
-steps, and the [submission worksheet](docs/openai-submission.md) for listing
-assets and review cases. The existing desktop marketplace installs below
-continue to work. Personal ChatGPT accounts can test the server separately
-through Developer mode while the public submission is being prepared.
+Install the public plugin and connect your Flowlines account when prompted.
+Availability and sign-in reuse across ChatGPT and Codex surfaces still need
+client-specific verification. The GitHub marketplace commands below install
+the repository package. See the [shared plugin guide](docs/chatgpt.md) and
+[submission worksheet](docs/openai-submission.md) for maintainer checks.
 
 ### Claude Code
 
@@ -60,9 +62,22 @@ Then sign in with `codex mcp login flowlines`, or open `/plugins` inside Codex. 
 
 The plugin registers an MCP server named `flowlines`. If you previously added the server by hand under the same name, remove that entry to avoid a duplicate.
 
-### After you sign in
+### Onboard your MCP server
 
-Signing in also creates your Flowlines account. When you have no workspace or API key yet, the Flowlines get-started page creates them, then turns green on your server's first tool call. To instrument your MCP server, ask your MCP client to onboard you to Flowlines: it calls `onboarding` for your namespace, carries out the plan, and verifies the first calls with `check_onboarding`.
+1. **Create your workspace and connect.** If you are new, open [Flowlines get-started](https://app.flowlines.ai/get-started). Install the plugin above, complete OAuth, and open your MCP server repository in your coding assistant. Start a new session if the plugin is not yet available.
+2. **Ask to onboard.** Send this message:
+
+   > Onboard my MCP server to Flowlines.
+
+   Your assistant calls the hosted `onboarding` tool, inspects your repository, and prepares the OpenTelemetry instrumentation plan for your namespace. You do not need to invoke a separate instrumentation skill.
+3. **Review and approve the plan.** Check the proposed code changes and which data will be exported. Your coding assistant applies the approved changes and runs the test calls. Create any required namespace API key on get-started and store it in your environment or secret manager.
+4. **Ask to verify.** Send this message:
+
+   > Check my Flowlines onboarding and fix anything missing.
+
+   Your assistant calls `check_onboarding`, addresses the reported gaps, and checks again. You are done when it verifies the telemetry from your test calls. Follow the plan's deployment instructions and verify again after deployment.
+
+Signing in connects the assistant; it does not instrument your server. The hosted `onboarding` and `check_onboarding` tools return a plan and verification results. Applying the plan requires a coding assistant with access to your repository. In ChatGPT without repository access, use Flowlines to inspect telemetry and prepare the plan, then apply it in your coding assistant.
 
 ### MCP connection errors
 
