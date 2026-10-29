@@ -1,0 +1,18 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "ai.flowlines/flowlines",
+  "title": "Flowlines",
+  "description": "MCP observability: analyse MCP server usage, investigate sessions, and instrument MCP servers.",
+  "websiteUrl": "https://flowlines.ai",
+  "repository": {
+    "url": "https://github.com/flowlines-ai/plugins",
+    "source": "github"
+  },
+  "version": "2.0.0",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://api.flowlines.ai/mcp"
+    }
+  ]
+}
