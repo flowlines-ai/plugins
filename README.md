@@ -124,6 +124,7 @@ Start new Claude Code and Codex sessions to apply the changes.
 ```
 .claude-plugin/marketplace.json     Claude Code marketplace
 .agents/plugins/marketplace.json    Codex marketplace
+server.json                         Official MCP Registry entry
 plugins/flowlines/
   plugin.json                       Portable identity and OpenAI listing metadata
   mcp.json                          Portable MCP server (streamable-http)
@@ -173,6 +174,24 @@ the user-invoked MCP prompt named `onboard` remains available.
 Public Plugins Directory releases use the separate
 [submission and publication process](docs/openai-submission.md). A repository
 merge or tag does not publish that listing.
+
+### MCP Registry
+
+`server.json` lists the remote MCP server, not the plugin, on the
+[official MCP Registry](https://registry.modelcontextprotocol.io) as
+`ai.flowlines/flowlines`. A merge does not publish it. Its `version` follows the
+MCP server's `serverInfo` version, and each publish needs a new version.
+
+The registry verifies the `ai.flowlines` name with a TXT record on the
+`flowlines.ai` apex (`v=MCPv1; k=ed25519; p=<public key>`). Sign in with the
+matching private key, then publish with
+[`mcp-publisher`](https://github.com/modelcontextprotocol/registry):
+
+```sh
+mcp-publisher validate
+mcp-publisher login dns --domain flowlines.ai --private-key "$(openssl pkey -in key.pem -noout -text | grep -A3 'priv:' | tail -n +2 | tr -d ' :\n')"
+mcp-publisher publish
+```
 
 ## History
 

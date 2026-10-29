@@ -56,6 +56,10 @@ class PublicSubmissionTests(unittest.TestCase):
         marketplace = json.loads((ROOT / ".claude-plugin/marketplace.json").read_text())
         entry = next(plugin for plugin in marketplace["plugins"] if plugin["name"] == portable["name"])
         self.assertEqual(entry["version"], portable["version"])
+        registry = json.loads((ROOT / "server.json").read_text())
+        self.assertEqual(registry["remotes"], [
+            {"type": "streamable-http", "url": portable_mcp["mcpServers"]["flowlines"]["url"]},
+        ])
 
     def test_archive_contains_one_flowlines_mcp_plugin(self) -> None:
         before = source_hashes()
