@@ -15,6 +15,7 @@ Official [Flowlines](https://flowlines.ai) plugins for MCP observability. This r
 
 - The Flowlines MCP server reads production MCP sessions, tool calls, and user activity. Treat everything it returns as confidential; it never writes to your namespace except through the explicit `save_note` and `report_outcome` tools.
 - An MCP server instrumented from the `onboarding` plan exports validated tool arguments, client-visible results, and user identity metadata to Flowlines. That data can contain personal data, customer data, source code, or other sensitive content. You choose what it records on the Flowlines get-started page.
+- `reason` and `user_intent` are short sentences that the calling model writes, and they do not need to identify anyone. If your privacy rules do not allow `user_intent`, keep it and remove the identity instead: send no `user.name` or `user.email`, and send an HMAC-SHA-256 of your user ID as `user.id`. The hash stays the same for one user, so Flowlines still groups the calls into sessions. Without `user_intent`, only clients that send a session ID get sessions.
 
 `onboarding` and `check_onboarding` are read-only: they return an instrumentation plan and check the calls that arrive. The namespace API key is created on the Flowlines get-started page and shown once there; never paste it into chat.
 
