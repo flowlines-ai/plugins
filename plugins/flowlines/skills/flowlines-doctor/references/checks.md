@@ -39,7 +39,8 @@ Set up from the plan of the Flowlines MCP `onboarding` tool. `check_onboarding` 
    - **Unavailable**: Flowlines cannot read ingestion accounting; a Flowlines-side outage, retry later.
 4. Calls without `reason` are visible but excluded from behavioural analysis. Calls without `user_intent` report a `missing_user_intent` quality issue. A client `session.id` is optional, and Flowlines never uses the transport session (`Mcp-Session-Id`) as one. Calls without a client `session.id` join a session inferred from `user.id` and `user_intent`; calls that also lack either of these are not associated with a session and are excluded from tool-loop detection. When `user_intent` was left out for privacy reasons, it can come back without identity: no `user.name` or `user.email`, and an HMAC-SHA-256 of the user ID as `user.id`, which still groups the calls into sessions.
 5. Paused servers: Settings, MCP lists every observed server with an enabled toggle. A paused server keeps accepting raw traces but stops call facts, session turns, signal discovery, and behavioural analysis for that server.
-6. Behavioural clustering needs at least 20 valid-reason calls and three distinct normalised reasons before anything appears, and the semantic map is a fixed 28-day snapshot. Their absence right after setup is not an ingestion failure.
+6. Tools refresh: from instrumentation plan version 9, the server sends one `SERVER` span for each `tools/list` request that it answers with a tool list, with `mcp.method.name` = `tools/list`, `user.id`, and the client attributes, and no payload. Flowlines keeps a request only with a `user.id`, and ignores a client's span or one with status `ERROR`. Without these spans, the user page's Tools refresh card stays empty and `list_users` with `tools_not_refreshed_since` matches every user. `check_onboarding` reports it as the `tool_list` check: a verification fails without the test user's request, and recent calls only warn. An integration from an earlier plan sends none: call `onboarding` again and add only its `toolListSpan`.
+7. Behavioural clustering needs at least 20 valid-reason calls and three distinct normalised reasons before anything appears, and the semantic map is a fixed 28-day snapshot. Their absence right after setup is not an ingestion failure.
 
 ## LangSmith and Langfuse connectors
 
@@ -70,6 +71,7 @@ Instrumented with the Flowlines SDKs or a plain OpenTelemetry exporter.
 | Users unidentified | `aggregate_sessions` metric `session_count`, `include_unidentified` true vs false | identified share of sessions (never `user_count`, which excludes empty ids); then `list_agent_attributes` to find the attribute to map |
 | Service names split | `list_agents` | inconsistent service names |
 | Empty turns | `get_session` on one recent session | capture disabled on the emitter |
+| No tools refresh | `check_onboarding` without a verification ID | `tool_list` warns: no `tools/list` request with a user arrived in the last day |
 | Known gaps | `list_notes` | already-pinned ingestion caveats |
 
 Identity mapping itself is configured per source in the Flowlines app under that source's mappings (global, users, aggregates); the MCP server cannot change it.

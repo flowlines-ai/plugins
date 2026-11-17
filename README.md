@@ -168,6 +168,12 @@ Plugin 0.5.0 uses the `onboarding` and `check_onboarding` tools from MCP server 
 Deploy that server version before releasing this plugin. The old `onboard` tool is retired;
 the user-invoked MCP prompt named `onboard` remains available.
 
+Plugin 0.6.0 also uses the `tools_not_refreshed_since` input of `list_users`, and the
+`tool_list` check of `check_onboarding`. The MCP server has them from
+[flowlines-ai/flowlines#800](https://github.com/flowlines-ai/flowlines/pull/800) and
+[#801](https://github.com/flowlines-ai/flowlines/pull/801), still as version 2.0.0. Deploy
+that server before releasing this plugin.
+
 1. Bump `version` in `plugins/flowlines/plugin.json`, `plugins/flowlines/.claude-plugin/plugin.json`, `plugins/flowlines/.codex-plugin/plugin.json`, and the plugin entry in `.claude-plugin/marketplace.json`.
 2. Merge to `main`. Marketplace installs track `main`; users pick up the new version with `claude plugin update flowlines@flowlines` or `codex plugin marketplace upgrade`.
 3. Tag the release with `claude plugin tag plugins/flowlines`.
