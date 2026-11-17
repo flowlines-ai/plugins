@@ -73,6 +73,7 @@ When data arrives but looks wrong, these tools locate the problem without openin
 - Users unidentified: `aggregate_sessions` with metric `session_count`, once with `include_unidentified: true` and once with `false`; the identified share is the second divided by the first. Do not use `user_count` for this, it never counts empty user ids. A low share means identity mapping is incomplete; `list_agent_attributes` shows which attributes arrive so the right one can be mapped in the app.
 - Service names split or misnamed: `list_agents` shows near-duplicate names caused by inconsistent service names.
 - Content missing from sessions: `get_session` on one recent session and confirm the turn tree has user and assistant content. Empty MCP tool payloads point at the instrumented server's capture settings.
+- Tools refresh missing: the user page's Tools refresh card stays empty. `check_onboarding` without a verification ID reports the `tool_list` check; a warning while calls arrive means the instrumented server sends no `tools/list` span. Integrations from before instrumentation plan version 9 send none. Some clients, such as ChatGPT, list the tools rarely, so confirm with a client that reconnects, such as a new Claude Code or Codex session.
 - Known artifacts: `list_notes` before concluding anything; ingestion gaps are often already pinned.
 
 ## Step 4: report
